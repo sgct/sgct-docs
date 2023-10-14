@@ -2,7 +2,16 @@
 ## Rendering
 The central component in SGCT is a singleton class called the `Engine`.  Its instance handles all initialization, rendering, network communication, and configuration handling.  The application needs to bind callback functions to the engine to customize specific tasks, for example initialization, rendering, and input handling.  To start SGCT's render loop, the function `Engine::render()` has to be called and it will only return once the application is ready to be terminated.  The registered callbacks are called in different stages in the rendering process illustrated below:
 
-![Render diagram](/assets/render-diagram.svg)
+:::{image} /assets/render-diagram.svg
+:align: center
+:class: only-dark
+:::
+
+:::{image} /assets/render-diagram-inverted.svg
+:align: center
+:class: only-light
+:::
+
 
 Blue boxes represent callback functions that can be set by the application.  None of the callbacks are necessary for the operation of SGCT.  Following is a description of the callbacks and what they can be used for in the generic case.
 
@@ -43,15 +52,15 @@ This callback is executed when the user drops one or more files onto one of the 
 This callback is called before the synchronization stage during which data is synchronized from the server to the client nodes in the cluster.  Shared variables (see [Classes](classes)) that are set in this callback by the server will be synchronized to the clients and can be read there.
 
 ### Sync
-This stage distributes the shared data from the server to the clients.  The clients wait for the data to be received before the rendering takes place.  Two callbacks have to be set for this stage to work;  the **server** has to set the `encode()` function callback and the **clients** have to set the `decode()` callback.  At runtime, SGCT determines which of the callbacks will be called, so there is no problem in setting the `decode()` for the master and vice versa.  These wrong callbacks will be ignored.  The data set by the application in the `encode()` callback will be serialized by the server, transferred to the clients via network, deserialized, and its contents are then available in the `decode()` callback.  The `shareddata.h` file contains two helper functions `serializeObject` and `deserializeObject` that can be used by the application to serialize its data.
+This stage distributes the shared data from the server to the clients.  The clients wait for the data to be received before the rendering takes place.  Two callbacks have to be set for this stage to work; at runtime, SGCT determines which of the callbacks will be called.  The data set by the application in the `encode()` callback will be serialized by the server, transferred to the clients via network, deserialized, and its contents are then available in the `decode()` callback.  The `shareddata.h` file contains two helper functions `serializeObject` and `deserializeObject` that can be used by the application to serialize its data.
 
 As the data is transferred as is, it is important to make sure that the data serialized is [POD](https://en.cppreference.com/w/cpp/named_req/PODType), or the behavior might be surprising when decoding the data.  Additionally, be aware of serializing any data structure that contains pointers to other parts in memory.  Just serializing the pointer value itself is most definitely not what you would want to do as that pointer will be invalid on the client machines.  In those cases, it is better to use your own way of referring to objects, for example through the use of identifiers.
 
 #### Encode
-This callback is only executed on the server and the application is responsible to fill the buffer provided by the `SharedData` singleton.  All variables that are provided to that class will then be available in the client's `Decode` callback.  This function is called on a separate thread from all other functions.
+This callback is only executed on the server and the application is responsible to return a buffer containing the binary data that should be sent to the clients.  This function is called on a separate thread from all other functions.
 
 #### Decode
-This callback will be called only on the clients at which time they can read the buffer provided by the `SharedData` singleton.  Please note that the variables have to be accessed in the same order in which the `Encode` callback has added them to the buffer.  This function is called on a separate thread from all other functions.
+This callback will be called only on the clients at which time they can use the provided buffer to read the transferred data.  This function is called on a separate thread from all other functions.
 
 
 ### Post Synchronization Pre Draw (PostSyncPreDraw)
@@ -61,15 +70,23 @@ At this stage, the synchronized variables are available and can be used to perfo
 ### Draw
 This callback is executed by SGCT multiple times per frame and the application has to render its content in this step.  The number of times this callback is executed depends on the configuration that was used to start the application.  For example: for each monoscopic, flat viewport, the `draw()` callback is called once, for each stereoscopic, flat viewport the `draw()` callback is called twice, once for the left eye, once for the right eye.  For a 180 degree fisheye, the draw callback is called four times, once for each environment map cube face that is used to construct the fisheye.
 
-![stitching-illustration](/assets/stitching-illustration.png)
+:::{image} /assets/stitching-illustration.png
+:alt: Stiching Illustration
+:class: bg-primary
+:width: 60%
+:::
 
-![fisheye-cubemap](/assets/fisheye-cubemap.png)
+:::{image} /assets/fisheye-cubemap.png
+:alt: Stiching Illustration
+:class: bg-primary
+:width: 20%
+:::
 
 In order to render correctly, the application **has** to use the `RenderData` struct that is passed as an argument to the callback.  The struct contains information about the active window, the viewport, and frustum mode that the callback is called for.  Most importantly, however, the struct also contains the `modelViewProjectionMatrix` that should be used by the application to render its scene.  For the normal OpenGL pipeline, the application should treat this matrix as the projection matrix component and it should continue handling its own model and view matrices, depending on the use case.
 
 
 ### Draw 2D
-This callback is executed after all `Draw` callbacks have been executed.  This callback can be used by the application to rendering 2D elements, for example user interfaces.  While there is no strict reason to split the `Draw` and `Draw2D` callbacks, the SGCT configuration files allow users to toggle the `Draw` and `Draw2D` for individual windows.  This makes it easier to, for example, setup a scenario in which a user creates two windows, one window for controlling an application that omits the expensive 3D rendering, and a second window that only contains the 3D rendering but omits the user interface.
+This callback is executed after all `Draw` callbacks have been executed.  This callback can be used by the application to rendering 2D elements, for example user interfaces.  While there is no strict reason to split the `Draw` and `Draw2D` callbacks, the SGCT configuration files allow users to toggle the `Draw3D` and `Draw2D` for individual windows.  This makes it easier to, for example, setup a scenario in which a user creates two windows, one window for controlling an application that omits the expensive 3D rendering, and a second window that only contains the 3D rendering but omits the user interface.
 
 
 ### Post Draw
