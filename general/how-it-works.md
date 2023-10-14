@@ -2,12 +2,12 @@
 ## Rendering
 The central component in SGCT is a singleton class called the `Engine`.  Its instance handles all initialization, rendering, network communication, and configuration handling.  The application needs to bind callback functions to the engine to customize specific tasks, for example initialization, rendering, and input handling.  To start SGCT's render loop, the function `Engine::render()` has to be called and it will only return once the application is ready to be terminated.  The registered callbacks are called in different stages in the rendering process illustrated below:
 
-:::{image} /assets/render-diagram.svg
+:::{image} /assets/images/render-diagram.svg
 :align: center
 :class: only-dark
 :::
 
-:::{image} /assets/render-diagram-inverted.svg
+:::{image} /assets/images/render-diagram-inverted.svg
 :align: center
 :class: only-light
 :::
@@ -70,13 +70,13 @@ At this stage, the synchronized variables are available and can be used to perfo
 ### Draw
 This callback is executed by SGCT multiple times per frame and the application has to render its content in this step.  The number of times this callback is executed depends on the configuration that was used to start the application.  For example: for each monoscopic, flat viewport, the `draw()` callback is called once, for each stereoscopic, flat viewport the `draw()` callback is called twice, once for the left eye, once for the right eye.  For a 180 degree fisheye, the draw callback is called four times, once for each environment map cube face that is used to construct the fisheye.
 
-:::{image} /assets/stitching-illustration.png
+:::{image} /assets/images/stitching-illustration.png
 :alt: Stiching Illustration
 :class: bg-primary
 :width: 60%
 :::
 
-:::{image} /assets/fisheye-cubemap.png
+:::{image} /assets/images/fisheye-cubemap.png
 :alt: Stiching Illustration
 :class: bg-primary
 :width: 20%

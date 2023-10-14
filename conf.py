@@ -85,7 +85,7 @@ html_theme_options = {
 html_title = f'SGCT documentation ({version})'
 html_short_title = "SGCT"
 
-html_favicon = "assets/icon.png"
+html_favicon = "assets/images/icon.png"
 
 # JavaScript files that are added into the generated documentation
 html_js_files = [
