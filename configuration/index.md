@@ -32,12 +32,12 @@ The rest of the documentation contains information about the configuration setti
 cluster
 node
 window
-capture
 viewport
 projection/index
 scene
 user
 settings
-tracker
+capture
 device
+tracker
 :::
