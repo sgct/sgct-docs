@@ -3,11 +3,11 @@ The capture node contains information relevant to capturing screenshots from an 
 
 - `path` **[string]** _optional_
 
-  Sets the path used when creating screenshots.  The default value is to use the current working directory.
+  Sets the path used when creating screenshots. The default value is to use the current working directory.
 
 - `format` **[(png, PNG, tga, TGA, jpg, or JPG)]** _optional_
 
-  Sets the screenshot format that should be used for the screenshots taken of the application.  The default value is `PNG`.
+  Sets the screenshot format that should be used for the screenshots taken of the application. The default value is `PNG`.
 
 - `range-begin` **[int > 0]** _optional_
 

@@ -1,13 +1,13 @@
 # Configuration files
-The format for the SGCT configuration files is JSON that defines the entire [Cluster](cluster) containing 1 or more [Node](node) fields, a [User](user) field, an optional [Settings](settings) field, an optional [Capture](capture) field, and an optional [Tracker](tracker) field.  Each of the fields is described on this page further below.
+The format for the SGCT configuration files is JSON that defines the entire [Cluster](cluster) containing 1 or more [Node](node) fields, a [User](user) field, an optional [Settings](settings) field, an optional [Capture](capture) field, and an optional [Tracker](tracker) field. Each of the fields is described on this page further below.
 
 Each configuration file has to fulfill the JSON schema which can be found in the [SGCT repository](https://raw.githubusercontent.com/sgct/sgct/master/sgct.schema.json).
 
 
 ## Examples
-This section contains two almost minimal examples showing on a small variety of configuration options.  Check the `config` folder in SGCT for more examples.
+This section contains two almost minimal examples showing on a small variety of configuration options. Check the `config` folder in SGCT for more examples.
 
-Here is a minimal example of a single node, single window configuration.  This file creates a single node on `localhost` with a single window that has a size of 1280 by 720 pixels with a camera of 80 degrees horizontal field-of-view and approximately 50.5 degrees vertical field of view.
+Here is a minimal example of a single node, single window configuration. This file creates a single node on `localhost` with a single window that has a size of 1280 by 720 pixels with a camera of 80 degrees horizontal field-of-view and approximately 50.5 degrees vertical field of view.
 ```{literalinclude} /assets/configs/example-single.json
 :language: json
 ```
