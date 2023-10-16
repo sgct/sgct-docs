@@ -71,5 +71,6 @@ This node describes a single viewport inside a [Window](window). Every window ca
   - [EquirectangularProjection](projection/equirectangularprojection)
   - [CylindricalProjection](projection/cylindricalprojection)
   - [SpoutOutputProjection](projection/spoutoutputprojection)
+  - [SpoutFlatProjection](projection/spoutflatprojection)
   - [ProjectionPlane](projection/projectionplane)
 

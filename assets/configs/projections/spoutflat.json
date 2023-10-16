@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "masteraddress": "localhost",
+  "nodes": [
+    {
+      "address": "localhost",
+      "port": 20401,
+      "windows": [
+        {
+          "pos": { "x": 50, "y": 50 },
+          "size": { "x": 1280, "y": 720 },
+          "viewports": [
+            {
+              "projection": {
+                "type": "SpoutFlatProjection",
+                "planarprojection": {
+                  "type": "PlanarProjection",
+                  "fov": { "hfov": 80, "vfov": 50.534 }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "eyeseparation": 0.06,
+      "pos": { "x": 0, "y": 0, "z": 4.0 }
+    }
+  ]
+}

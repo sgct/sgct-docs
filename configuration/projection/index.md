@@ -10,5 +10,6 @@ sphericalmirrorprojection
 equirectangularprojection
 cylindricalprojection
 spoutoutputprojection
+spoutflatprojection
 projectionplane
 :::
