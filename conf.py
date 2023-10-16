@@ -66,7 +66,7 @@ html_theme_options = {
 
   # Set CSS Variables. The dark theme inherits all light variables
   "light_css_variables": {
-    "font-stack--monospace": "Source Code Pro, monospace",
+    "font-stack--monospace": "Source Code Pro Light, monospace",
   },
 
   # Add custom items in the footer
@@ -79,14 +79,13 @@ html_theme_options = {
     },
   ],
 
-  "light_logo": "sgct-logo.png",
-  "dark_logo": "sgct-logo-inverted.png"
+  "light_logo": "logo.png",
+  "dark_logo": "logo-inverted.png"
 }
 html_title = f'SGCT documentation ({version})'
 html_short_title = "SGCT"
 
-# html_logo = "assets/sgct-logo.png"
-html_favicon = "assets/c-logo.png"
+html_favicon = "assets/images/icon.png"
 
 # JavaScript files that are added into the generated documentation
 html_js_files = [
