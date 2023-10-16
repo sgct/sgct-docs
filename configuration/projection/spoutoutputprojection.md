@@ -1,6 +1,10 @@
 # Spout Output Projection
 This projection method provides the ability to share individual cube map faces or a fully reprojected image using the [Spout](https://spout.zeal.co/) library. This library only supports the Windows operating system, so this projection will only work on Windows machines. Spout's functionality is the abilty to shared textures between different applications on the same machine, making it possible to render images using SGCT and making them available to other real-time applications on the same machine for further processing. Spout uses a textual name for accessing which texture should be used for sharing. The SpoutOutputProjection has three different output types, outputting each cube map face, sharing a fisheye image, or sharing an equirectangular projection, as determined by the `mapping` attribute.
 
+- `type` **[string = "SpoutOutputProjection"]**
+
+  Defines the type of this projection. The value _has_ to be "SpoutOutputProjection"
+
 - `quality` **[low, medium, high, 256, 512, 1k, 1024, 1.5k, 1536, 2k, 2048, 4k, 4096, 8k, 8192, 16k, 16384]** _optional_
 
   Determines the pixel resolution of the cube map faces. The named values are corresponding:
@@ -50,3 +54,19 @@ This projection method provides the ability to share individual cube map faces o
   - `y`
   - `z`
   - `w`
+
+## Example
+```{literalinclude} /assets/configs/projections/spout_output-cubemap.json
+:language: json
+:caption: Example file transferring a cubemap ([download](/assets/configs/projections/spout_output-cubemap.json))
+```
+
+```{literalinclude} /assets/configs/projections/spout_output-equirectangular.json
+:language: json
+:caption: Example file transferring an equirectangular projection ([download](/assets/configs/projections/spout_output-equirectangular.json))
+```
+
+```{literalinclude} /assets/configs/projections/spout_output-fisheye.json
+:language: json
+:caption: Example file transferring a fisheye projection ([download](/assets/configs/projections/spout_output-fisheye.json))
+```

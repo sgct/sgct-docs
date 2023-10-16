@@ -1,6 +1,10 @@
 # Planar Projection
 This projection node describes a projection for the [Viewport](../viewport) that is a flat projection described by simple frustum, which may be asymmetric.
 
+- `type` **[string = "PlanarProjection"]**
+
+  Defines the type of this projection. The value _has_ to be "PlanarProjection"
+
 - `fov` **[object]**
 
   This element describes the field of view used the camera in this planar projection. The angles for the field of view can be provided in two ways. Either by providing the up, down, left, and right angles, which enables asymmetric frustums, or alternatively providing horizontal and vertical angles for symmetric frustums.
@@ -53,3 +57,19 @@ This projection node describes a projection for the [Viewport](../viewport) that
     - `y`
     - `z`
     - `w`
+
+## Example
+```{literalinclude} /assets/configs/projections/planar-symmetric.json
+:language: json
+:caption: Example file for a symmetric frustum ([download](/assets/configs/projections/planar-symmetric.json))
+```
+
+```{literalinclude} /assets/configs/projections/planar-asymmetric.json
+:language: json
+:caption: Example file for an asymmetric frustum ([download](/assets/configs/projections/planar-asymmetric.json))
+```
+
+```{literalinclude} /assets/configs/projections/planar-orientation.json
+:language: json
+:caption: Example file with an off-center and angled frustum ([download](/assets/configs/projections/planar-orientation.json))
+```

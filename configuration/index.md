@@ -8,18 +8,21 @@ Each configuration file has to fulfill the JSON schema which can be found in the
 This section contains two almost minimal examples showing on a small variety of configuration options. Check the `config` folder in SGCT for more examples.
 
 Here is a minimal example of a single node, single window configuration. This file creates a single node on `localhost` with a single window that has a size of 1280 by 720 pixels with a camera of 80 degrees horizontal field-of-view and approximately 50.5 degrees vertical field of view.
-```{literalinclude} /assets/configs/example-single.json
+```{literalinclude} /assets/configs/example/single.json
 :language: json
+:caption: A single node configuration file ([download](/assets/configs/example/single.json))
 ```
 
 The following example is a configuration that creates two nodes, both running on the local machine, the difference being that their field-of-views are rotated by 40 degrees off the center.
-```{literalinclude} /assets/configs/example-two-nodes.json
+```{literalinclude} /assets/configs/example/two-nodes.json
 :language: json
+:caption: A configuration file containing two local nodes ([download](/assets/configs/example/two-nodes.json))
 ```
 
 The final example is a fisheye rendering which demonstrates a more sophisticated rendering setup, which internally consists of many projections that are automatically assembled by SGCT into a single circular fisheye output.
-```{literalinclude} /assets/configs/example-fisheye.json
+```{literalinclude} /assets/configs/example/fisheye.json
 :language: json
+:caption: A configuration file for a single fisheye projection ([download](/assets/configs/example/fisheye.json))
 ```
 
 ## Element types

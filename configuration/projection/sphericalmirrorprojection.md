@@ -1,6 +1,10 @@
 # Spherical Mirror Projection
 This node type is used to create a projection used for Paul Bourke's spherical mirror setup (see [here](http://paulbourke.net/dome/)), which makes it possible to use an off-the-shelf projector to create a planetarium-like environment by bouncing the image of a shiny metal mirror. Please note that this is not the only way to produce these kind of images. Depending on your setup and availability of warping meshes, it might suffice to use the [FisheyeProjection](fisheyeprojection) node type instead and add a single mesh to the parent [Viewport](../viewport) instead. The `config` folder in SGCT contains an example of this using a default 16x9 warping mesh. This projection type specifically deals with the case where you have four different meshes, one for the bottom, top, left, and right parts of the distorted image.
 
+- `type` **[string = "SphericalMirrorProjection"]**
+
+  Defines the type of this projection. The value _has_ to be "SphericalMirrorProjection"
+
 - `quality` **[low, medium, high, 256, 512, 1k, 1024, 1.5k, 1536, 2k, 2048, 4k, 4096, 8k, 8192, 16k, 16384]** _optional_
 
   Determines the pixel resolution of the cube map faces that are reprojected to create the spherical mirror projection rendering. The higher resolution these cube map faces have, the better quality the resulting spherical mirror projection rendering, but at the expense of increased rendering times. The named values are corresponding:
@@ -42,3 +46,9 @@ This node type is used to create a projection used for Paul Bourke's spherical m
   - `right` **[string]**
 
     The path to the warping mesh that is loaded for the bottom part of the spherical mirror projection.
+
+## Example
+```{literalinclude} /assets/configs/projections/spherical_mirror.json
+:language: json
+:caption: Example file ([download](/assets/configs/projections/spherical_mirror.json))
+```

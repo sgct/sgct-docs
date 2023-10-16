@@ -66,7 +66,7 @@ html_theme_options = {
 
   # Set CSS Variables. The dark theme inherits all light variables
   "light_css_variables": {
-    "font-stack--monospace": "Source Code Pro, monospace",
+    "font-stack--monospace": "Source Code Pro Light, monospace",
   },
 
   # Add custom items in the footer

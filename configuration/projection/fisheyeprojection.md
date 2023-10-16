@@ -3,6 +3,10 @@ This node describes a fisheye projection that is used to render into its parent 
 
 Depending on the field of view, a cube map is created consisting of 4-6 cube maps that are reprojected in a post-processing into a fisheye of the desired field-of-view.
 
+- `type` **[string = "FisheyeProjection"]**
+
+  Defines the type of this projection. The value _has_ to be "FisheyeProjection"
+
 - `fov` `[float > 0]` _optional_
 
   Describes the field of view that is covered by the fisheye projection in degrees. The resulting image will always be a circle, and this value determines how much of a field of view is covered by this circle. Please note specifically that this also includes field-of-view settings >180, in which a larger distortion is applied to the image. The default value is 180.
@@ -65,3 +69,9 @@ Depending on the field of view, a cube map is created consisting of 4-6 cube map
 - `background` **[object]** _optional_
 
   This value determines the color that is used for the parts of the image that are not covered by the spherical fisheye image. The alpha component of this color has to be provided even if the final render target does not contain an alpha channel, in which case the alpha value is ignored. All attributes `r`, `g`, `b`, and `a` must be defined and be between 0 and 1. The default color is a dark gray (0.3, 0.3, 0.3, 1.0).
+
+## Example
+```{literalinclude} /assets/configs/projections/fisheye.json
+:language: json
+:caption: Example file ([download](/assets/configs/projections/fisheye.json))
+```
