@@ -4,11 +4,11 @@
 :maxdepth: 2
 :titlesonly:
 
-cylindricalprojection
-equirectangularprojection
-fisheyeprojection
 planarprojection
-projectionplane
+fisheyeprojection
 sphericalmirrorprojection
+equirectangularprojection
+cylindricalprojection
 spoutoutputprojection
+projectionplane
 :::

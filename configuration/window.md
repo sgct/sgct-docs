@@ -1,7 +1,6 @@
 # Window
 This type specifies a single window that is used to render content into.  There can be an arbitrary(*-ish*) number of windows for each node and they all will be created and initialized at start time.  Each window has at least one [Viewport](viewport) that specifies exactly where in the window the rendering occurs with which parameters.
 
-## Fields
 - `id` **[int]** _optional_
 
   The numerical identifier of this window. By default windows are given numerical value equal to their position in the node-1, meaning that the first window of a node will have the id `0`, the second window id `1`, etc.  This value can be used to overwride this.  It is not possible to give the same ID to two different windows.

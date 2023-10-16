@@ -1,7 +1,6 @@
 # Cluster
 Overall cluster settings are provided at the root of the JSON object.
 
-## Fields
 - `masteraddress` **[string]**
 
   Contains the address of the node that acts as the server for this cluster.  This means that one of the `Node` elements described in this configuration file *has* to have an address that corresponds to this `masteraddress`.  This value can be either an IP address or a DNS name, which will be resolved at application startup.
