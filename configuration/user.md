@@ -15,18 +15,11 @@ This node specifies a user position and parameters. In most cases, only a single
 
 - `orientation` **[object]** _optional_
 
-  Describes a fixed orientation for the viewing direction of this user. This can be provided either as Euler angles or as a quaternion. The two modes *cannot* be mixed. The following descibes the different attributes that can be used for the orientation. Please note that *all* attributes for the chosen method have to be specified.
+  Describes a fixed orientation for the virtual image plane as Euler angles. The object must contain all of the following attributes:
 
-  Euler angles:
-  - `pitch` or `elevation`: negative numbers tilt the camera downwards; positive numbers tilt upwards. The allowed range is \[-90, 90\].
-  - `yaw`, `heading`, or `azimuth`: negative numbers pan the camera to the left; positive numbers pan to the right. The allowed range is \[-360, 360\].
-  - `roll` or `bank`: negative numbers rotate the camera to the left; positive numbers to the right. The allowed range is \[-180, 180\].
-
-  Quaternion:
-  - `x`
-  - `y`
-  - `z`
-  - `w`
+  - `pitch`: negative numbers tilt the camera downwards; positive numbers tilt upwards. The allowed range is `[-90, 90]`.
+  - `yaw`: negative numbers pan the camera to the left; positive numbers pan to the right. The allowed range is `[-360, 360]`.
+  - `roll`: negative numbers rotate the camera to the left; positive numbers to the right. The allowed range is `[-180, 180]`.
 
 - `matrix` **[object]** _optional_
 

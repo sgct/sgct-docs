@@ -3,11 +3,11 @@ This projection method renderes an equirectangular projection (also called lat-l
 
 - `type` **[string = "EquirectangularProjection"]**
 
-  Defines the type of this projection. The value _has_ to be "EquirectangularProjection"
+  Defines the type of this projection. The value must be "EquirectangularProjection"
 
 - `quality` **[low, medium, high, 256, 512, 1k, 1024, 1.5k, 1536, 2k, 2048, 4k, 4096, 8k, 8192, 16k, 16384]** _optional_
 
-  Determines the pixel resolution of the cube map faces that are reprojected to create the fisheye rendering. The higher resolution these cube map faces have, the better quality the resulting fisheye rendering, but at the expense of increased rendering times. The named values are corresponding:
+  Determines the pixel resolution of the cube map faces that are individually rendered to create the equirectangular rendering. The higher resolution these cube map faces have, the better quality the resulting equirectangular rendering, but this comes at the expense of increased rendering times. The named values are corresponding:
   - `low`: 256
   - `medium`: 512
   - `high`: 1024

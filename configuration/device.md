@@ -46,18 +46,11 @@ This node specifies a single tracking device that belongs to a specific tracker 
 
 - `orientation` **[object]** _optional_
 
-  Describes a fixed orientation for the device. This can be provided either as Euler angles or as a quaternion. The two modes *cannot* be mixed. The following descibes the different attributes that can be used for the orientation. Please note that *all* attributes for the chosen method have to be specified. If the `matrix` attribute is also specified, it will overwrite the value specified here.
+  Describes a fixed orientation for the virtual image plane as Euler angles. The object must contain all of the following attributes:
 
-  Euler angles:
   - `pitch`: negative numbers tilt the camera downwards; positive numbers tilt upwards. The allowed range is `[-90, 90]`.
   - `yaw`: negative numbers pan the camera to the left; positive numbers pan to the right. The allowed range is `[-360, 360]`.
   - `roll`: negative numbers rotate the camera to the left; positive numbers to the right. The allowed range is `[-180, 180]`.
-
-  Quaternion:
-  - `x`
-  - `y`
-  - `z`
-  - `w`
 
 - `matrix` **[object]** _optional_
 

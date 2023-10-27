@@ -3,11 +3,11 @@ This projection method renders the scene into a view that can be mapped on the i
 
 - `type` **[string = "CylindricalProjection"]**
 
-  Defines the type of this projection. The value _has_ to be "CylindricalProjection"
+  Defines the type of this projection. The value must be "CylindricalProjection"
 
 - `quality` **[low, medium, high, 256, 512, 1k, 1024, 1.5k, 1536, 2k, 2048, 4k, 4096, 8k, 8192, 16k, 16384]** _optional_
 
-  Determines the pixel resolution of the cube map faces that are reprojected to create the fisheye rendering. The higher resolution these cube map faces have, the better quality the resulting fisheye rendering, but at the expense of increased rendering times. The named values are corresponding:
+  Determines the pixel resolution of the cube map faces that are individually rendered to create the cylindrical rendering. The higher resolution these cube map faces have, the better quality the resulting cylindrical rendering, but this comes at the expense of increased rendering times. The named values are corresponding:
   - `low`: 256
   - `medium`: 512
   - `high`: 1024
@@ -22,15 +22,15 @@ This projection method renders the scene into a view that can be mapped on the i
 
 - `rotation` **[float]** _optional_
 
-  Provides a rotation angle (in radians) why which the cylindrical projection is offset into the resulting image.
-
-- `radius` **[float]** _optional_
-
-  Sets the radius of the sphere, which is only used in the cases when stereoscopic rendering is used.
+  Provides a rotation angle (in radians) around the z-axis around which the cylindrical projection is rotated.
 
 - `heightoffset` **[float]** _optional_
 
   Offsets the height from which the cylindrical projection is generated. This is, in general, only necessary if the user position is offset and you want to counter that offset to continue producing a "standard" cylindrical projection
+
+- `radius` **[float]** _optional_
+
+  Sets the radius of the sphere, which is only used in the cases when stereoscopic rendering is used.
 
 ## Example
 ```{literalinclude} /assets/configs/projections/cylindrical.json

@@ -3,19 +3,19 @@ This projection method provides the ability to share a single flat image using t
 
 - `type` **[string = "SpoutFlatProjection"]**
 
-  Defines the type of this projection. The value _has_ to be "SpoutFlatProjection"
+  Defines the type of this projection. The value must be "SpoutFlatProjection"
 
-- `width` **[integer]** _optional_
+- `width` **[integer > 0]** _optional_
 
   Determines the width of the window that is shared in pixels. If the value is not specified, a width of 1280 is used.
 
-- `height` **[integer]** _optional_
+- `height` **[integer > 0]** _optional_
 
   Determines the height of the window that is shared in pixels. If the value is not specified, a height of 720 is used.
 
 - `mappingspoutname` **[string]** _optional_
 
-  The Spout name under which the rendering is shared. If the name is not specified, the `SPOUT_SGCT_MAPPING` name is used.
+  The Spout name under which the rendering is shared. If the name is not specified, `SPOUT_SGCT_MAPPING` is used.
 
 - `drawmain` **[boolean]** _optional_
 

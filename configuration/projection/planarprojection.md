@@ -1,13 +1,13 @@
 # Planar Projection
-This projection node describes a projection for the [Viewport](../viewport) that is a flat projection described by simple frustum, which may be asymmetric.
+This projection node describes a projection for the [Viewport](../viewport) that is a flat projection described by simple frustum, which may be asymmetric. If you are building a new configuration file and do not know which projection type you should use, this type is probably the right one.
 
 - `type` **[string = "PlanarProjection"]**
 
-  Defines the type of this projection. The value _has_ to be "PlanarProjection"
+  Defines the type of this projection. The value must be "PlanarProjection"
 
 - `fov` **[object]**
 
-  This element describes the field of view used the camera in this planar projection. The angles for the field of view can be provided in two ways. Either by providing the up, down, left, and right angles, which enables asymmetric frustums, or alternatively providing horizontal and vertical angles for symmetric frustums.
+  This object describes the field of view used the camera in this planar projection. The angles for the field of view can be provided in two ways. Either by providing the `up`, `down`, `left`, and `right` angles, which enables asymmetric frustums, or alternatively providing horizontal (`hfov`) and vertical (`vfov`) angles for symmetric frustums.
 
   Option 1:
   - `down` **[float]**
@@ -35,28 +35,21 @@ This projection node describes a projection for the [Viewport](../viewport) that
 
     The angle (in degrees) covered by the camera in the vertical direction. This is a symmetric frustum around the center and provides the same result as providing the `up` and `down` values with the half-angle.
 
+- `orientation` **[object]** _optional_
+
+  Describes a fixed orientation for the virtual image plane as Euler angles. The object must contain all of the following attributes:
+
+  - `pitch`: negative numbers tilt the camera downwards; positive numbers tilt upwards. The allowed range is `[-90, 90]`.
+  - `yaw`: negative numbers pan the camera to the left; positive numbers pan to the right. The allowed range is `[-360, 360]`.
+  - `roll`: negative numbers rotate the camera to the left; positive numbers to the right. The allowed range is `[-180, 180]`.
+
 - `distance` **[float]** _optional_
 
-  The distance (in meters) at which the virtual render plane is placed. This value is only important when rendering this viewport using stereocopy as the `distance` and the [User](../user)s `eyeseparation` are used to compute the change in frustum between the left and the right eyes.
+  The distance (in meters) at which the virtual render plane is placed. This value is only important when rendering this viewport using stereocopy as the `distance` and the [User](../user)'s `eyeseparation` are used to compute the change in frustum between the left and the right eyes.
 
 - `offset` **[object]** _optional_
 
-  A linear offset in meters that is added to the virtual image plane. Must define three float attributes `x`, `y`, and `z`. The default values are `x=0`, `y=0`, `z=0`, meaning that no offset is applied to the image plane.
-
-- `orientation` **[object]** _optional_
-
-  Describes a fixed orientation for the virtual image plane. This can be provided either as Euler angles or as a quaternion. The two modes *cannot* be mixed. The following descibes the different attributes that can be used for the orientation. Please note that *all* attributes for the chosen method have to be specified.
-
-  Euler angles:
-    - `pitch`: negative numbers tilt the camera downwards; positive numbers tilt upwards. The allowed range is `[-90, 90]`.
-    - `yaw`: negative numbers pan the camera to the left; positive numbers pan to the right. The allowed range is `[-360, 360]`.
-    - `roll`: negative numbers rotate the camera to the left; positive numbers to the right. The allowed range is `[-180, 180]`.
-
-  Quaternion:
-    - `x`
-    - `y`
-    - `z`
-    - `w`
+  A linear offset in meters that is added to the virtual image plane. The object must contain three float attributes `x`, `y`, and `z`. The default values are `x=0`, `y=0`, `z=0`, meaning that no individual offset is applied to the image plane.
 
 ## Example
 ```{literalinclude} /assets/configs/projections/planar-symmetric.json
