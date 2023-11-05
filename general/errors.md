@@ -163,9 +163,6 @@ SGCT uses unique error codes in the case when an unrecoverable error occurs that
 ### 1120
 > \[Cluster\] Cluster master address must not be empty
 
-### 1121
-> \[Cluster\] Cluster external control port must be non-negative
-
 ### 1122
 > \[Cluster\] There must be at least one user in the cluster
 
