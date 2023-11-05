@@ -7,7 +7,7 @@ This type defines a single computing node that is contained in the described clu
 
 - `port` **[integer > 0]**
 
-  The port at which this node is available at to the server. Since the server has to open bidirectional sockets to all of the client nodes, the `port` for each `Node` has to be mutually exclusive, meaning that no two `Node`s can have the same `port`. Please note that operating systems have restricted behavior when trying to open ports lower than a fixed limt.  For example, Unix does not allow non-elevated users to open ports < 1024. As a convention, SGCT usually uses ports staring at 20400, but this is an arbitrary convention without a specific reason.
+  The port at which this node is available at to the server. Please note that operating systems have restricted behavior when trying to open ports lower than a fixed limt.  For example, Unix does not allow non-elevated users to open ports < 1024. As a convention, SGCT usually uses ports staring at 20400, but this is an arbitrary convention without a specific reason.
 
 - `windows` **[array, min 1]**
 

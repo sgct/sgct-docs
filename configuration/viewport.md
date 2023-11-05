@@ -71,7 +71,7 @@ This node describes a single viewport inside a [Window](window). Every window ca
 
 - `blacklevelmask` **[string]** _optional_
 
-  The file referenced in this attribute is used as a postprocessing step for this viewport. The image should be a grayscale image, where each pixel will be multiplied with the resulting image from the application in order to perform a black level adaptation. If a pixel is completely white, the resulting pixel is the same as the applications output, if a pixel is black, the resulting pixel will be back, if it is 50% grey, the resolution pixel will be half brightness. This setting is the more The default is that no black level mask is applied.
+  The file referenced in this attribute is used as a postprocessing step for this viewport. The image should be a grayscale image, where each pixel will be multiplied with the resulting image from the application in order to perform a black level adaptation. If a pixel is completely white, the resulting pixel is the same as the applications output, if a pixel is black, the resulting pixel will be black, if it is 50% grey, the resolution pixel will be half brightness. This setting is the more The default is that no black level mask is applied.
 
 - `eye` **[center, left, or right]** _optional_
 
