@@ -123,3 +123,11 @@ This type specifies a single window that is used to render content into. There c
   - `32ui`: `GL_RGBA32UI`, `GL_UNSIGNED_INT`
 
   The default value for this attribute is `8`.
+
+- `mirrorx` **[boolean]** _optional_
+
+  If this value is set to `true`, the resulting image of the window will be horizontally mirrored. The default value if it is not specified is `false`.
+
+- `mirrory` **[boolean]** _optional_
+
+  If this value is set to `true`, the resulting image of the window will be vertically mirrored. The default value if it is not specified is `false`.
