@@ -77,3 +77,10 @@ This node describes a single viewport inside a [Window](window). Every window ca
 
   Forces this viewport to be rendered with a specific eye, using the corresponding [User](user)s eye separation to compute the correct frustum. If this value is not set, the viewport will be rendered according to the parent [Window](window)'s `stereo` attribute.
 
+- `mirrorx` **[boolean]** _optional_
+
+  If this value is set to `true`, the resulting image of the viewport will be horizontally mirrored. The default value if it is not specified is `false`.
+
+- `mirrory` **[boolean]** _optional_
+
+  If this value is set to `true`, the resulting image of the viewport will be vertically mirrored. The default value if it is not specified is `false`.
