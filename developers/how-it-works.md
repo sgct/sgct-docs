@@ -49,7 +49,7 @@ This callback is executed when the user drops one or more files onto one of the 
 
 
 ### Pre Synchronization (PreSync)
-This callback is called before the synchronization stage during which data is synchronized from the server to the client nodes in the cluster. Shared variables (see [Classes](classes)) that are set in this callback by the server will be synchronized to the clients and can be read there.
+This callback is called before the synchronization stage during which data is synchronized from the server to the client nodes in the cluster. Shared variables that are set in this callback by the server will be synchronized to the clients and can be read there.
 
 ### Sync
 This stage distributes the shared data from the server to the clients. The clients wait for the data to be received before the rendering takes place. Two callbacks have to be set for this stage to work; at runtime, SGCT determines which of the callbacks will be called. The data set by the application in the `encode()` callback will be serialized by the server, transferred to the clients via network, deserialized, and its contents are then available in the `decode()` callback. The `shareddata.h` file contains two helper functions `serializeObject` and `deserializeObject` that can be used by the application to serialize its data.

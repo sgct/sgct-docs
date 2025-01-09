@@ -1,0 +1,60 @@
+{# Print a single property entry #}
+{% macro print_entry(prop, value, required) %}
+  - `{{ prop }}` **[{{ value.human_type }}]**   {% if prop not in required %} _optional_ {% endif %}
+
+    {{value.description | markdownify}}
+
+    {% if value.oneOf %}
+      {% if "properties" in value.oneOf[0] %}
+
+      {%- for key in value.oneOf -%}
+        Option {{loop.index}}
+
+        {{print_object(key) | indent(4, True) }}
+      {% endfor %}
+
+      {% else %}
+        {{value.oneOf}}
+      {% endif %}
+    {% endif %}
+
+  {% if value.human_type == "object" %}
+      {{ print_object(value) | indent(4, True) }}
+  {% endif %}
+
+  {% if value.type == "array" and "human_items" in value and value.human_items.type == "object" %}
+      {{ print_object(value.human_items) | indent(4, True) }}
+  {% endif %}
+{% endmacro %}
+
+
+{# Print a whole object #}
+{% macro print_object(obj) %}
+{# First, print the non-optional ones #}
+{% for prop, value in obj.properties.items() if prop in obj.required %}
+  {{ print_entry(prop, value, obj.required) }}
+{% endfor %}
+
+{# Then print the optional ones #}
+{% for prop, value in obj.properties.items() if prop not in obj.required %}
+  {{ print_entry(prop, value, obj.required) }}
+{% endfor %}
+{% endmacro %}
+
+
+
+# {{ title }}
+
+{{ data.description | markdownify }}
+
+{{ print_object(data) }}
+
+{% if examples %}
+## Example
+{% for example in examples %}
+```{literalinclude} /{{ example }}
+:language: json
+:caption: Example file ([download](/{{ example }}))
+```
+{% endfor %}
+{% endif %}
