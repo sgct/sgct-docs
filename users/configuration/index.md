@@ -11,21 +11,21 @@ Here is a minimal example of a single node, single window configuration. This fi
 
 ```{literalinclude} /assets/configs/examples/single.json
 :language: json
-:caption: A single node configuration file ([download](/assets/configs/example/single.json))
+:caption: A single node configuration file ([download](/assets/configs/examples/single.json))
 ```
 
 The following example is a configuration that creates two nodes, both running on the local machine, the difference being that their field-of-views are rotated by 40 degrees off the center.
 
 ```{literalinclude} /assets/configs/examples/two-nodes.json
 :language: json
-:caption: A configuration file containing two local nodes ([download](/assets/configs/example/two-nodes.json))
+:caption: A configuration file containing two local nodes ([download](/assets/configs/examples/two-nodes.json))
 ```
 
 The final example is a fisheye rendering which demonstrates a more sophisticated rendering setup, which internally consists of many projections that are automatically assembled by SGCT into a single circular fisheye output.
 
 ```{literalinclude} /assets/configs/examples/fisheye.json
 :language: json
-:caption: A configuration file for a single fisheye projection ([download](/assets/configs/example/fisheye.json))
+:caption: A configuration file for a single fisheye projection ([download](/assets/configs/examples/fisheye.json))
 ```
 
 ## Base Types

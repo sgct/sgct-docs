@@ -1,47 +1,48 @@
 {# Print a single property entry #}
 {% macro print_entry(prop, value, required) %}
-  - `{{ prop }}` **[{{ value.human_type }}]**   {% if prop not in required %} _optional_ {% endif %}
+  - `{{ prop }}` **[{{ value | friendly_type }}]**   {% if prop not in required %} _optional_ {% endif %}
 
     {{value.description | markdownify}}
 
     {% if value.oneOf %}
-      {% if "properties" in value.oneOf[0] %}
-
       {%- for key in value.oneOf -%}
-        Option {{loop.index}}
+        {%- if key is composite_type -%}
+          Option {{loop.index}}
 
-        {{print_object(key) | indent(4, True) }}
+          {{print_object(key) | indent(4, True) }}
+        {% else-%}
+          1. {{key | friendly_type}}
+        {% endif %}
       {% endfor %}
-
-      {% else %}
-        {{value.oneOf}}
-      {% endif %}
     {% endif %}
 
-  {% if value.human_type == "object" %}
+  {% if value is composite_type %}
       {{ print_object(value) | indent(4, True) }}
   {% endif %}
 
-  {% if value.type == "array" and "human_items" in value and value.human_items.type == "object" %}
-      {{ print_object(value.human_items) | indent(4, True) }}
+  {% if value.type == "array" and value["items"] is composite_type %}
+      {{ print_object(value["items"]) | indent(4, True) }}
   {% endif %}
 {% endmacro %}
 
 
-{# Print a whole object #}
 {% macro print_object(obj) %}
-{# First, print the non-optional ones #}
+{% if obj.properties %}
 {% for prop, value in obj.properties.items() if prop in obj.required %}
   {{ print_entry(prop, value, obj.required) }}
 {% endfor %}
 
-{# Then print the optional ones #}
 {% for prop, value in obj.properties.items() if prop not in obj.required %}
   {{ print_entry(prop, value, obj.required) }}
 {% endfor %}
+{% else %}
+{{obj}}
+{% endif %}
 {% endmacro %}
 
 
+
+{# MAIN #}
 
 # {{ title }}
 

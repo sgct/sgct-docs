@@ -5,6 +5,33 @@ import re
 import os
 import glob
 
+# These are the pages that are created on their own. Other objects that are defined in the
+# schema file will be described locally. Objects that have their own page are referenced
+# via a link instead
+Individual_Pages = [
+  { "name": "Cluster",                      "path": "" },
+  { "name": "Node",                         "path": "#/$defs/node" },
+  { "name": "Window",                       "path": "#/$defs/window" },
+  { "name": "Viewport",                     "path": "#/$defs/viewport", },
+  { "name": "Scene",                        "path": "#/$defs/scene" },
+  { "name": "User",                         "path": "#/$defs/user" },
+  { "name": "Settings",                     "path": "#/$defs/settings" },
+  { "name": "Capture",                      "path": "#/$defs/capture" },
+  { "name": "Device",                       "path": "#/$defs/device" },
+  { "name": "Tracker",                      "path": "#/$defs/tracker" },
+  { "name": "Cubemap Projection",           "path": "#/$defs/cubemapprojection",         "prefix": "projection" },
+  { "name": "Cylindrical Projection",       "path": "#/$defs/cylindricalprojection",     "prefix": "projection" },
+  { "name": "Equirectangular Projection",   "path": "#/$defs/equirectangularprojection", "prefix": "projection" },
+  { "name": "Fisheye Projection",           "path": "#/$defs/fisheyeprojection",         "prefix": "projection" },
+  { "name": "Planar Projection",            "path": "#/$defs/planarprojection",          "prefix": "projection" },
+  { "name": "ProjectionPlane",              "path": "#/$defs/projectionplane",           "prefix": "projection" },
+  { "name": "Spherical Mirror Projection",  "path": "#/$defs/sphericalmirrorprojection", "prefix": "projection" },
+  { "name": "Texture Mapped Projection",    "path": "#/$defs/texturemappedprojection",   "prefix": "projection" }
+]
+
+def is_paged_type(type):
+  return any(entry["path"] == type for entry in Individual_Pages)
+
 def extract_data(schema, location):
   original_location = location
 
@@ -87,139 +114,25 @@ def extract_data(schema, location):
 
 
 
-def create_human_type(data):
-  def handle_array(p):
-    items = p["items"]
-    if "type" in items:
-      return f"array of {create_human_type(items["type"])}s"
-    if "$ref" in items:
-      t = items["$ref"].split("/")[-1]
-      return f"array of [{t.capitalize()}]({t})s"
-
-  def handle_boolean(p):
-    return "boolean"
-
-  def handle_integer(p):
-    if "enum" in p:
-      return ", ".join([str(x) for x in p["enum"]])
-    if "minimum" in p and "maximum" in p:
-      if p["minimum"] == p["maximum"]:
-        return f"integer equal to {p["minimum"]}"
-      else:
-        return f"integer between {p["minimum"]} and {p["maximum"]}"
-    if "minimum" in p:
-      if p["minimum"] == 0:
-        return f"non-negative integer"
-      elif p["minimum"] == 1:
-        return f"positive integer"
-      else:
-        return f"integer min {p["minimum"]}"
-    if "maximum" in p:
-      return f"integer max {p["maximum"]}"
-
-    return "integer"
-
-  def handle_number(p):
-    if "enum" in p:
-      return ", ".join([str(x) for x in p["enum"]])
-    if "minimum" in p and "maximum" in p:
-      if p["minimum"] == p["maximum"]:
-        return f"number equal to {p["minimum"]}"
-      else:
-        return f"number between {p["minimum"]} and {p["maximum"]}"
-    if "exclusiveMinimum" in p:
-      if p["exclusiveMinimum"] == 0:
-        return "positive number"
-      else:
-        return f"number bigger than {p["exclusiveMinimum"]}"
-    if "minimum" in p:
-      if p["minimum"] == 0:
-        return f"non-negative number"
-      elif p["minimum"] == 1:
-        return f"positive number"
-      else:
-        return f"number min {p["minimum"]}"
-    if "maximum" in p:
-      return f"number max {p["maximum"]}"
-
-    return "number"
-
-  def handle_object(p):
-    if "reference_type" in p:
-      t = p["reference_type"].split("/")[-1]
-      match t:
-        case "ivec2": return "[ivec2](/users/configuration/index.md#ivec2)"
-        case "ivec3": return "[ivec3](/users/configuration/index.md#ivec3)"
-        case "ivec4": return "[ivec4](/users/configuration/index.md#ivec4)"
-        case "vec2": return "[vec2](/users/configuration/index.md#vec2)"
-        case "vec3": return "[vec3](/users/configuration/index.md#vec3)"
-        case "vec4": return "[vec4](/users/configuration/index.md#vec4)"
-        case "color": return "[color](/users/configuration/index.md#color)"
-        case "orientation": return "[orientation](/users/configuration/index.md#orientation)"
-        case _:       return f"[{t.capitalize()}]({t})"
-    else:
-      return "object"
-
-  def handle_string(p):
-    if "enum" in p:
-      return ", ".join(p["enum"])
-    if "const" in p:
-      return f"string = {p["const"]}"
-    if "minLength" in p and "maxLength" in p:
-      return f"string between {p["minLength"]} and {p["maxLength"]}"
-    if "minLength" in p:
-      if p["minLength"] == 1:
-        return f"non-empty string"
-      else:
-        return f"string min {p["minLength"]}"
-    if "maxLength" in p:
-      return f"string max {p["maxLength"]}"
-
-    return "string"
-
-
-  def handle_data(data):
-    if "type" in data:
-      human_type = data["type"]
-      match data["type"]:
-        case "array":    human_type = handle_array(data)
-        case "boolean":  human_type = handle_boolean(data)
-        case "integer":  human_type = handle_integer(data)
-        case "number":   human_type = handle_number(data)
-        case "object":   human_type = handle_object(data)
-        case "string":   human_type = handle_string(data)
-      data["human_type"] = human_type
-
-      if data["type"] == "object":
-        # Recurse down
-        if "properties" in data:
-          for k in data["properties"]:
-            handle_data(data["properties"][k])
-
-      if data["type"] == "array" and "type" in data["items"] and data["items"]["type"] == "object":
-        handle_data(data["items"])
-        data["human_items"] = data["items"]
-
-  # CONTINUE HERE;  WHEN GOING INTO ARRAY TYPE "items" IT DOES NOT HAVE A 'properties' SO
-  # THE TOP IF STATEMENT DOESN"T DO ANYTHING
-
-  if "properties" in data:
-    for k in data["properties"]:
-      handle_data(data["properties"][k])
-
-  return data
-
-
 def generate_docs(branch, local_folder):
   environment = Environment(loader=FileSystemLoader("templates"), trim_blocks=False, lstrip_blocks=False)
 
   def markdownify(value):
     def replace_match(match):
       word = match.group()
-      filename = f"users/configuration/{word.lower()}.md"
-      if os.path.isfile(filename):
-        return f"[{word}]({word.lower()})"
+      for page in Individual_Pages:
+        if page["path"] == f"#/$defs/{word.lower()}":
+          prefix = page.get("prefix")
+          if prefix:
+            return f"[{word}](/users/configuration/{prefix}/{word.lower()})"
+          else:
+            return f"[{word}](/users/configuration/{word.lower()})"
+
       return word
+      # filename = f"users/configuration/{word.lower()}.md"
+      # if os.path.isfile(filename):
+        # return f"[{word}](/../{word.lower()})"
+      # return word
 
     def replace_url(match):
       url = match.group()
@@ -237,14 +150,152 @@ def generate_docs(branch, local_folder):
 
     return text
 
-  def show_all_attrs(value):
-      res = []
-      for k in dir(value):
-          res.append('%r %r\n' % (k, getattr(value, k)))
-      return '\n'.join(res)
+  def friendly_type(value):
+    def handle_array(p):
+      items = p["items"]
+      if "type" in items:
+        return f"array of {friendly_type(items["type"])}s"
+      if "$ref" in items:
+        t = items["$ref"].split("/")[-1]
+        return f"array of [{t.capitalize()}]({t})s"
+
+    def handle_boolean(p):
+      return "boolean"
+
+    def handle_integer(p):
+      if "enum" in p:
+        return ", ".join([str(x) for x in p["enum"]])
+      if "minimum" in p and "maximum" in p:
+        if p["minimum"] == p["maximum"]:
+          return f"integer equal to {p["minimum"]}"
+        else:
+          return f"integer between {p["minimum"]} and {p["maximum"]}"
+      if "minimum" in p:
+        if p["minimum"] == 0:
+          return f"non-negative integer"
+        elif p["minimum"] == 1:
+          return f"positive integer"
+        else:
+          return f"integer min {p["minimum"]}"
+      if "maximum" in p:
+        return f"integer max {p["maximum"]}"
+
+      return "integer"
+
+    def handle_number(p):
+      if "enum" in p:
+        return ", ".join([str(x) for x in p["enum"]])
+      if "minimum" in p and "maximum" in p:
+        if p["minimum"] == p["maximum"]:
+          return f"number equal to {p["minimum"]}"
+        else:
+          return f"number between {p["minimum"]} and {p["maximum"]}"
+      if "exclusiveMinimum" in p:
+        if p["exclusiveMinimum"] == 0:
+          return "positive number"
+        else:
+          return f"number bigger than {p["exclusiveMinimum"]}"
+      if "minimum" in p:
+        if p["minimum"] == 0:
+          return f"non-negative number"
+        elif p["minimum"] == 1:
+          return f"positive number"
+        else:
+          return f"number min {p["minimum"]}"
+      if "maximum" in p:
+        return f"number max {p["maximum"]}"
+
+      return "number"
+
+    def handle_object(p):
+      if "reference_type" in p:
+        t = p["reference_type"].split("/")[-1]
+        match t:
+          case "ivec2": return "[ivec2](/users/configuration/index.md#ivec2)"
+          case "ivec3": return "[ivec3](/users/configuration/index.md#ivec3)"
+          case "ivec4": return "[ivec4](/users/configuration/index.md#ivec4)"
+          case "vec2": return "[vec2](/users/configuration/index.md#vec2)"
+          case "vec3": return "[vec3](/users/configuration/index.md#vec3)"
+          case "vec4": return "[vec4](/users/configuration/index.md#vec4)"
+          case "color": return "[color](/users/configuration/index.md#color)"
+          case "orientation": return "[orientation](/users/configuration/index.md#orientation)"
+          case _:
+            if is_paged_type(p["reference_type"]):
+              for page in Individual_Pages:
+                if page["path"] == p["reference_type"]:
+                  prefix = page.get("prefix")
+                  if prefix:
+                    return f"[{t.capitalize()}](/users/configuration/{prefix}/{t})"
+                  else:
+                    return f"[{t.capitalize()}](/users/configuration/{t})"
+              assert(False)
+            else:
+              return "object"
+      else:
+        return "object"
+
+    def handle_string(p):
+      if "enum" in p:
+        return ", ".join(p["enum"])
+      if "const" in p:
+        return f"string = {p["const"]}"
+      if "minLength" in p and "maxLength" in p:
+        return f"string between {p["minLength"]} and {p["maxLength"]}"
+      if "minLength" in p:
+        if p["minLength"] == 1:
+          return f"non-empty string"
+        else:
+          return f"string min {p["minLength"]}"
+      if "maxLength" in p:
+        return f"string max {p["maxLength"]}"
+
+      return "string"
+
+
+    if "type" in value:
+      match value["type"]:
+        case "array":    return handle_array(value)
+        case "boolean":  return handle_boolean(value)
+        case "integer":  return handle_integer(value)
+        case "number":   return handle_number(value)
+        case "object":   return handle_object(value)
+        case "string":   return handle_string(value)
+        case _:          return value["type"]
+    elif "oneOf" in value:
+      return "one of the following"
+    else:
+      return value
+
+  def composite_type(value):
+    if "reference_type" in value:
+      Reference_Types = [
+"#/$defs/orientation", "#/$defs/mat4", "#/$defs/vec2", "#/$defs/vec3", "#/$defs/vec4", "#/$defs/ivec2", "#/$defs/ivec3", "#/$defs/ivec4", "#/$defs/color", "#/$defs/projectionquality"
+      ]
+      is_reference_type = value["reference_type"] in Reference_Types
+      return not is_reference_type and not is_paged_type(value["reference_type"])
+    elif "type" in value:
+      return value["type"] == "object"
+    else:
+      return False
+
+#       data["human_type"] = human_type
+# 
+#       if data["type"] == "object":
+#         # Recurse down
+#         if "properties" in data:
+#           for k in data["properties"]:
+#             handle_data(data["properties"][k])
+# 
+#       if data["type"] == "array" and "type" in data["items"] and data["items"]["type"] == "object":
+#         handle_data(data["items"])
+#         data["human_items"] = data["items"]
+# 
+#     return data
+
 
   environment.filters["markdownify"] = markdownify
-  environment.filters["show_all_attrs"] = show_all_attrs
+  environment.filters["friendly_type"] = friendly_type
+  environment.tests["composite_type"] = composite_type
 
 
   # Clone the repository if necessary
@@ -275,7 +326,7 @@ def generate_docs(branch, local_folder):
   template = environment.get_template("configuration.html.jinja")
 
   def write_configuration(title, schema, schema_path, folder_prefix = ""):
-    data = create_human_type(extract_data(schema, schema_path))
+    data = extract_data(schema, schema_path)
 
     # Find examples
     part = schema_path.split("/")[-1]
@@ -287,28 +338,14 @@ def generate_docs(branch, local_folder):
     with open(f"users/configuration/{folder_prefix}/{title.lower().replace(" ", "")}.md", "w") as f:
       f.write(doc)
 
-  write_configuration("Cluster", schema, "")
-  write_configuration("Node", schema, "#/$defs/node")
-  write_configuration("Window", schema, "#/$defs/window")
-  write_configuration("Viewport", schema, "#/$defs/viewport")
-  write_configuration("Scene", schema, "#/$defs/scene")
-  write_configuration("User", schema, "#/$defs/user")
-  write_configuration("Settings", schema, "#/$defs/settings")
-  write_configuration("Capture", schema, "#/$defs/capture")
-  write_configuration("Device", schema, "#/$defs/device")
-  write_configuration("Tracker", schema, "#/$defs/tracker")
-
-  write_configuration("Cubemap Projection", schema, "#/$defs/cubemapprojection", "projection")
-  write_configuration("Cylindrical Projection", schema, "#/$defs/cylindricalprojection", "projection")
-  write_configuration("Equirectangular Projection", schema, "#/$defs/equirectangularprojection", "projection")
-  write_configuration("Fisheye Projection", schema, "#/$defs/fisheyeprojection", "projection")
-  write_configuration("Planar Projection", schema, "#/$defs/planarprojection", "projection")
-  write_configuration("ProjectionPlane", schema, "#/$defs/projectionplane", "projection")
-  write_configuration("Spherical Mirror Projection", schema, "#/$defs/sphericalmirrorprojection", "projection")
-  write_configuration("Texture Mapped Projection", schema, "#/$defs/texturemappedprojection", "projection")
+  for page in Individual_Pages:
+    if "prefix" in page:
+      write_configuration(page["name"], schema, page["path"], page["prefix"])
+    else:
+      write_configuration(page["name"], schema, page["path"])
 
 
 
-
+# Debugging
 if __name__ == "__main__":
   generate_docs("master", "sgct-checkout")
