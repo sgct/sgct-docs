@@ -29,8 +29,21 @@ Individual_Pages = [
   { "name": "Texture Mapped Projection",    "path": "#/$defs/texturemappedprojection",   "prefix": "projection" }
 ]
 
-def is_paged_type(type):
-  return any(entry["path"] == type for entry in Individual_Pages)
+# These are types that we use a "built-in types that are defined separately. So whenever
+# we encounter these in a documentation we just want to treat then as given and not dig
+# down into them whenever using them
+Reference_Types = [
+  { "name": "orientation", "def": "#/$defs/orientation" },
+  { "name": "mat4",        "def": "#/$defs/mat4" },
+  { "name": "vec2",        "def": "#/$defs/vec2" },
+  { "name": "vec3",        "def": "#/$defs/vec3" },
+  { "name": "vec4",        "def": "#/$defs/vec4" },
+  { "name": "ivec2",       "def": "#/$defs/ivec2" },
+  { "name": "ivec3",       "def": "#/$defs/ivec3" },
+  { "name": "ivec4",       "def": "#/$defs/ivec4" },
+  { "name": "color",       "def": "#/$defs/color" },
+]
+
 
 def extract_data(schema, location):
   original_location = location
@@ -97,15 +110,14 @@ def markdownify(value):
     return word
 
   def replace_url(match):
-    url = match.group()
-    return f"[link]({url})"
+    return f"[link]({match.group()})"
 
   if value:
     t = re.sub(r"\b[A-Z][a-zA-Z0-9]*\b", replace_match, value)
     t = re.sub(r"\bhttps?://[^\s.,]+(?:\.[^\s.,]+)*(?<!\.)", replace_url, t)
     return t
   else:
-    return None
+    return ""
 
 
 def friendly_type(value):
@@ -168,27 +180,21 @@ def friendly_type(value):
   def handle_object(p):
     if "reference_type" in p:
       t = p["reference_type"].split("/")[-1]
-      match t:
-        case "ivec2": return "[ivec2](/users/configuration/index.md#ivec2)"
-        case "ivec3": return "[ivec3](/users/configuration/index.md#ivec3)"
-        case "ivec4": return "[ivec4](/users/configuration/index.md#ivec4)"
-        case "vec2": return "[vec2](/users/configuration/index.md#vec2)"
-        case "vec3": return "[vec3](/users/configuration/index.md#vec3)"
-        case "vec4": return "[vec4](/users/configuration/index.md#vec4)"
-        case "color": return "[color](/users/configuration/index.md#color)"
-        case "orientation": return "[orientation](/users/configuration/index.md#orientation)"
-        case _:
-          if is_paged_type(p["reference_type"]):
-            for page in Individual_Pages:
-              if page["path"] == p["reference_type"]:
-                prefix = page.get("prefix")
-                if prefix:
-                  return f"[{t.capitalize()}](/users/configuration/{prefix}/{t})"
-                else:
-                  return f"[{t.capitalize()}](/users/configuration/{t})"
-            assert(False)
-          else:
-            return "object"
+      is_reference_type = any(entry["name"] == t for entry in Reference_Types)
+
+      if is_reference_type:
+        return f"[{t}](/users/configuration/index.md#{t})"
+      else:
+        if any(entry["path"] == p["reference_type"] for entry in Individual_Pages):
+          for page in Individual_Pages:
+            if page["path"] == p["reference_type"]:
+              prefix = page.get("prefix")
+              if prefix:
+                return f"[{t.capitalize()}](/users/configuration/{prefix}/{t})"
+              else:
+                return f"[{t.capitalize()}](/users/configuration/{t})"
+        else:
+          return "object"
     else:
       return "object"
 
@@ -196,7 +202,7 @@ def friendly_type(value):
     if "enum" in p:
       return ", ".join(p["enum"])
     if "const" in p:
-      return f"string = {p["const"]}"
+      return f"string = \"{p["const"]}\""
     if "minLength" in p and "maxLength" in p:
       return f"string between {p["minLength"]} and {p["maxLength"]}"
     if "minLength" in p:
@@ -227,11 +233,10 @@ def friendly_type(value):
 
 def composite_type(value):
   if "reference_type" in value:
-    Reference_Types = [
-"#/$defs/orientation", "#/$defs/mat4", "#/$defs/vec2", "#/$defs/vec3", "#/$defs/vec4", "#/$defs/ivec2", "#/$defs/ivec3", "#/$defs/ivec4", "#/$defs/color", "#/$defs/projectionquality"
-    ]
-    is_reference_type = value["reference_type"] in Reference_Types
-    return not is_reference_type and not is_paged_type(value["reference_type"])
+    is_reference_type = any(entry["def"] == value["reference_type"] for entry in Reference_Types)
+    is_special_type = value["reference_type"] in [ "#/$defs/projectionquality"]
+    is_paged_type =  any(entry["path"] == value["reference_type"] for entry in Individual_Pages)
+    return not is_reference_type and not is_special_type and not is_paged_type
   elif "type" in value:
     return value["type"] == "object"
   else:
@@ -246,13 +251,17 @@ def array_composite_type(value):
 
 
 
-def generate_docs(branch, local_folder):
+# Generate the documentation Markdown files. If `local_folder` is not specified, we check
+# out the SGCT repository to get access to the `sgct.schema.json`` which contains all of
+# the primary documentation. This schema file will then be read and converted into the
+# Markdown files that we serve as the documentation
+def generate_docs(branch, local_folder = ""):
   environment = Environment(loader=FileSystemLoader("templates"))
   environment.filters["markdownify"] = markdownify
   environment.filters["friendly_type"] = friendly_type
   environment.tests["composite_type"] = composite_type
   environment.tests["array_composite_type"] = array_composite_type
-
+  template = environment.get_template("configuration.html.jinja")
 
   # Clone the repository if necessary
   if local_folder == "":
@@ -279,9 +288,12 @@ def generate_docs(branch, local_folder):
   schema_file = f"{local_folder}/sgct.schema.json"
   with open(schema_file, "r") as file:
     schema = json.load(file)
-  template = environment.get_template("configuration.html.jinja")
 
-  def write_configuration(title, schema, schema_path, folder_prefix = ""):
+  for page in Individual_Pages:
+    title = page["name"]
+    schema_path = page["path"]
+    prefix = page.get("prefix") or ""
+
     data = extract_data(schema, schema_path)
 
     # Find examples
@@ -291,14 +303,9 @@ def generate_docs(branch, local_folder):
       examples = glob.glob(f"assets/configs/examples/{part}/*.json")
 
     doc = template.render(data=data, title=title, examples=examples)
-    with open(f"users/configuration/{folder_prefix}/{title.lower().replace(" ", "")}.md", "w") as f:
+    path = f"users/configuration/{prefix}/{title.lower().replace(" ", "")}.md"
+    with open(path, "w") as f:
       f.write(doc)
-
-  for page in Individual_Pages:
-    if "prefix" in page:
-      write_configuration(page["name"], schema, page["path"], page["prefix"])
-    else:
-      write_configuration(page["name"], schema, page["path"])
 
 
 
