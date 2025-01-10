@@ -84,218 +84,174 @@ def extract_data(schema, location):
             item["properties"][k]["oneOf"][i]["description"] = description
             item["properties"][k]["oneOf"][i]["reference_type"] = ref
 
-
-
-
-# Tracker/Devices/offset and Tracker/Devices/transformation
-# don't have a proper type without this code, but we don't want to resolve _all_
-# $refs recursively. Need something smarter here
-
-#       if item["properties"][k]["type"] == "object":
-#         item["properties"][k] = extract_data(schema, f"{original_location}/properties/{k}").copy()
-#         continue
-#
-#       if item["properties"][k]["type"] == "array":
-#         item["properties"][k] = extract_data(schema, f"{original_location}/properties/{k}/items").copy()
-#         continue
-
-  # if "items" in item:
-  #   assert(item["type"] == "array")
-  #   if "$ref" in item["items"]:
-  #       ref = item["items"]["$ref"]
-  #       description = ""
-  #       if "description" in item["properties"][k]:
-  #         description = item["properties"][k]["description"]
-  #       item["items"] = extract_data(schema, ref).copy()
-  #       item["items"]["description"] = description
-  #       item["items"]["reference_type"] = ref
-
   return item
+
+
+def markdownify(value):
+  def replace_match(match):
+    word = match.group()
+    for page in Individual_Pages:
+      if page["path"] == f"#/$defs/{word.lower()}":
+        prefix = page.get("prefix") or ""
+        return f"[{word}](/users/configuration/{prefix}/{word.lower()})"
+    return word
+
+  def replace_url(match):
+    url = match.group()
+    return f"[link]({url})"
+
+  if value:
+    t = re.sub(r"\b[A-Z][a-zA-Z0-9]*\b", replace_match, value)
+    t = re.sub(r"\bhttps?://[^\s.,]+(?:\.[^\s.,]+)*(?<!\.)", replace_url, t)
+    return t
+  else:
+    return None
+
+
+def friendly_type(value):
+  def handle_array(p):
+    items = p["items"]
+    if "type" in items:
+      return f"array of {friendly_type(items["type"])}s"
+    if "$ref" in items:
+      t = items["$ref"].split("/")[-1]
+      return f"array of [{t.capitalize()}]({t})s"
+
+  def handle_boolean(p):
+    return "boolean"
+
+  def handle_integer(p):
+    if "enum" in p:
+      return ", ".join([str(x) for x in p["enum"]])
+    if "minimum" in p and "maximum" in p:
+      if p["minimum"] == p["maximum"]:
+        return f"integer equal to {p["minimum"]}"
+      else:
+        return f"integer between {p["minimum"]} and {p["maximum"]}"
+    if "minimum" in p:
+      if p["minimum"] == 0:
+        return f"non-negative integer"
+      elif p["minimum"] == 1:
+        return f"positive integer"
+      else:
+        return f"integer min {p["minimum"]}"
+    if "maximum" in p:
+      return f"integer max {p["maximum"]}"
+
+    return "integer"
+
+  def handle_number(p):
+    if "enum" in p:
+      return ", ".join([str(x) for x in p["enum"]])
+    if "minimum" in p and "maximum" in p:
+      if p["minimum"] == p["maximum"]:
+        return f"number equal to {p["minimum"]}"
+      else:
+        return f"number between {p["minimum"]} and {p["maximum"]}"
+    if "exclusiveMinimum" in p:
+      if p["exclusiveMinimum"] == 0:
+        return "positive number"
+      else:
+        return f"number bigger than {p["exclusiveMinimum"]}"
+    if "minimum" in p:
+      if p["minimum"] == 0:
+        return f"non-negative number"
+      elif p["minimum"] == 1:
+        return f"positive number"
+      else:
+        return f"number min {p["minimum"]}"
+    if "maximum" in p:
+      return f"number max {p["maximum"]}"
+
+    return "number"
+
+  def handle_object(p):
+    if "reference_type" in p:
+      t = p["reference_type"].split("/")[-1]
+      match t:
+        case "ivec2": return "[ivec2](/users/configuration/index.md#ivec2)"
+        case "ivec3": return "[ivec3](/users/configuration/index.md#ivec3)"
+        case "ivec4": return "[ivec4](/users/configuration/index.md#ivec4)"
+        case "vec2": return "[vec2](/users/configuration/index.md#vec2)"
+        case "vec3": return "[vec3](/users/configuration/index.md#vec3)"
+        case "vec4": return "[vec4](/users/configuration/index.md#vec4)"
+        case "color": return "[color](/users/configuration/index.md#color)"
+        case "orientation": return "[orientation](/users/configuration/index.md#orientation)"
+        case _:
+          if is_paged_type(p["reference_type"]):
+            for page in Individual_Pages:
+              if page["path"] == p["reference_type"]:
+                prefix = page.get("prefix")
+                if prefix:
+                  return f"[{t.capitalize()}](/users/configuration/{prefix}/{t})"
+                else:
+                  return f"[{t.capitalize()}](/users/configuration/{t})"
+            assert(False)
+          else:
+            return "object"
+    else:
+      return "object"
+
+  def handle_string(p):
+    if "enum" in p:
+      return ", ".join(p["enum"])
+    if "const" in p:
+      return f"string = {p["const"]}"
+    if "minLength" in p and "maxLength" in p:
+      return f"string between {p["minLength"]} and {p["maxLength"]}"
+    if "minLength" in p:
+      if p["minLength"] == 1:
+        return f"non-empty string"
+      else:
+        return f"string min {p["minLength"]}"
+    if "maxLength" in p:
+      return f"string max {p["maxLength"]}"
+
+    return "string"
+
+
+  if "type" in value:
+    match value["type"]:
+      case "array":    return handle_array(value)
+      case "boolean":  return handle_boolean(value)
+      case "integer":  return handle_integer(value)
+      case "number":   return handle_number(value)
+      case "object":   return handle_object(value)
+      case "string":   return handle_string(value)
+      case _:          return value["type"]
+  elif "oneOf" in value:
+    return "one of the following"
+  else:
+    return value
+
+
+def composite_type(value):
+  if "reference_type" in value:
+    Reference_Types = [
+"#/$defs/orientation", "#/$defs/mat4", "#/$defs/vec2", "#/$defs/vec3", "#/$defs/vec4", "#/$defs/ivec2", "#/$defs/ivec3", "#/$defs/ivec4", "#/$defs/color", "#/$defs/projectionquality"
+    ]
+    is_reference_type = value["reference_type"] in Reference_Types
+    return not is_reference_type and not is_paged_type(value["reference_type"])
+  elif "type" in value:
+    return value["type"] == "object"
+  else:
+    return False
+
+
+def array_composite_type(value):
+  if value.get("type") == "array":
+    return composite_type(value.get("items"))
+  else:
+    return False
 
 
 
 def generate_docs(branch, local_folder):
-  environment = Environment(loader=FileSystemLoader("templates"), trim_blocks=False, lstrip_blocks=False)
-
-  def markdownify(value):
-    def replace_match(match):
-      word = match.group()
-      for page in Individual_Pages:
-        if page["path"] == f"#/$defs/{word.lower()}":
-          prefix = page.get("prefix")
-          if prefix:
-            return f"[{word}](/users/configuration/{prefix}/{word.lower()})"
-          else:
-            return f"[{word}](/users/configuration/{word.lower()})"
-
-      return word
-      # filename = f"users/configuration/{word.lower()}.md"
-      # if os.path.isfile(filename):
-        # return f"[{word}](/../{word.lower()})"
-      # return word
-
-    def replace_url(match):
-      url = match.group()
-      return f"[link]({url})"
-
-    if not value:
-      return value
-
-    # Regular expression to match capitalized words
-    links_pattern = r"\b[A-Z][a-zA-Z0-9]*\b"
-    text = re.sub(links_pattern, replace_match, value)
-
-    url_pattern = r"\bhttps?://[^\s.,]+(?:\.[^\s.,]+)*(?<!\.)"
-    text = re.sub(url_pattern, replace_url, text)
-
-    return text
-
-  def friendly_type(value):
-    def handle_array(p):
-      items = p["items"]
-      if "type" in items:
-        return f"array of {friendly_type(items["type"])}s"
-      if "$ref" in items:
-        t = items["$ref"].split("/")[-1]
-        return f"array of [{t.capitalize()}]({t})s"
-
-    def handle_boolean(p):
-      return "boolean"
-
-    def handle_integer(p):
-      if "enum" in p:
-        return ", ".join([str(x) for x in p["enum"]])
-      if "minimum" in p and "maximum" in p:
-        if p["minimum"] == p["maximum"]:
-          return f"integer equal to {p["minimum"]}"
-        else:
-          return f"integer between {p["minimum"]} and {p["maximum"]}"
-      if "minimum" in p:
-        if p["minimum"] == 0:
-          return f"non-negative integer"
-        elif p["minimum"] == 1:
-          return f"positive integer"
-        else:
-          return f"integer min {p["minimum"]}"
-      if "maximum" in p:
-        return f"integer max {p["maximum"]}"
-
-      return "integer"
-
-    def handle_number(p):
-      if "enum" in p:
-        return ", ".join([str(x) for x in p["enum"]])
-      if "minimum" in p and "maximum" in p:
-        if p["minimum"] == p["maximum"]:
-          return f"number equal to {p["minimum"]}"
-        else:
-          return f"number between {p["minimum"]} and {p["maximum"]}"
-      if "exclusiveMinimum" in p:
-        if p["exclusiveMinimum"] == 0:
-          return "positive number"
-        else:
-          return f"number bigger than {p["exclusiveMinimum"]}"
-      if "minimum" in p:
-        if p["minimum"] == 0:
-          return f"non-negative number"
-        elif p["minimum"] == 1:
-          return f"positive number"
-        else:
-          return f"number min {p["minimum"]}"
-      if "maximum" in p:
-        return f"number max {p["maximum"]}"
-
-      return "number"
-
-    def handle_object(p):
-      if "reference_type" in p:
-        t = p["reference_type"].split("/")[-1]
-        match t:
-          case "ivec2": return "[ivec2](/users/configuration/index.md#ivec2)"
-          case "ivec3": return "[ivec3](/users/configuration/index.md#ivec3)"
-          case "ivec4": return "[ivec4](/users/configuration/index.md#ivec4)"
-          case "vec2": return "[vec2](/users/configuration/index.md#vec2)"
-          case "vec3": return "[vec3](/users/configuration/index.md#vec3)"
-          case "vec4": return "[vec4](/users/configuration/index.md#vec4)"
-          case "color": return "[color](/users/configuration/index.md#color)"
-          case "orientation": return "[orientation](/users/configuration/index.md#orientation)"
-          case _:
-            if is_paged_type(p["reference_type"]):
-              for page in Individual_Pages:
-                if page["path"] == p["reference_type"]:
-                  prefix = page.get("prefix")
-                  if prefix:
-                    return f"[{t.capitalize()}](/users/configuration/{prefix}/{t})"
-                  else:
-                    return f"[{t.capitalize()}](/users/configuration/{t})"
-              assert(False)
-            else:
-              return "object"
-      else:
-        return "object"
-
-    def handle_string(p):
-      if "enum" in p:
-        return ", ".join(p["enum"])
-      if "const" in p:
-        return f"string = {p["const"]}"
-      if "minLength" in p and "maxLength" in p:
-        return f"string between {p["minLength"]} and {p["maxLength"]}"
-      if "minLength" in p:
-        if p["minLength"] == 1:
-          return f"non-empty string"
-        else:
-          return f"string min {p["minLength"]}"
-      if "maxLength" in p:
-        return f"string max {p["maxLength"]}"
-
-      return "string"
-
-
-    if "type" in value:
-      match value["type"]:
-        case "array":    return handle_array(value)
-        case "boolean":  return handle_boolean(value)
-        case "integer":  return handle_integer(value)
-        case "number":   return handle_number(value)
-        case "object":   return handle_object(value)
-        case "string":   return handle_string(value)
-        case _:          return value["type"]
-    elif "oneOf" in value:
-      return "one of the following"
-    else:
-      return value
-
-  def composite_type(value):
-    if "reference_type" in value:
-      Reference_Types = [
-"#/$defs/orientation", "#/$defs/mat4", "#/$defs/vec2", "#/$defs/vec3", "#/$defs/vec4", "#/$defs/ivec2", "#/$defs/ivec3", "#/$defs/ivec4", "#/$defs/color", "#/$defs/projectionquality"
-      ]
-      is_reference_type = value["reference_type"] in Reference_Types
-      return not is_reference_type and not is_paged_type(value["reference_type"])
-    elif "type" in value:
-      return value["type"] == "object"
-    else:
-      return False
-
-#       data["human_type"] = human_type
-# 
-#       if data["type"] == "object":
-#         # Recurse down
-#         if "properties" in data:
-#           for k in data["properties"]:
-#             handle_data(data["properties"][k])
-# 
-#       if data["type"] == "array" and "type" in data["items"] and data["items"]["type"] == "object":
-#         handle_data(data["items"])
-#         data["human_items"] = data["items"]
-# 
-#     return data
-
-
+  environment = Environment(loader=FileSystemLoader("templates"))
   environment.filters["markdownify"] = markdownify
   environment.filters["friendly_type"] = friendly_type
   environment.tests["composite_type"] = composite_type
+  environment.tests["array_composite_type"] = array_composite_type
 
 
   # Clone the repository if necessary
@@ -346,6 +302,6 @@ def generate_docs(branch, local_folder):
 
 
 
-# Debugging
+# For debugging purposes, make this file executable directly with default values
 if __name__ == "__main__":
   generate_docs("master", "sgct-checkout")
