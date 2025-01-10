@@ -1,6 +1,6 @@
 {# Print a single property entry. If necessary, recurse if it is a composite type or an array of composite types #}
 {% macro print_entry(prop, value, required) %}
-  - `{{ prop }}` **[{{ value | friendly_type }}]** {% if prop not in required %} _optional_ {% endif %}
+  - `{{ prop }}` **[{{ value | extract_type }}]** {% if prop not in required %} _optional_ {% endif %}
 
     {{ value.description | markdownify }}
 
@@ -11,7 +11,7 @@
 
           {{ print_object(key) | indent(4, True) }}
         {% else -%}
-          1. {{ key | friendly_type }}
+          1. {{ key | extract_type }}
         {% endif %}
       {% endfor %}
     {% endif %}

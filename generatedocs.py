@@ -5,6 +5,12 @@ import re
 import os
 import glob
 
+# This variable contains the Schema that we are currently working on. It is a global
+# variable as (a) there is only one schema we are working with and (b) the Jinja filters
+# need access to the schema to be able to resolve potential $def references and this is
+# cleaner than carrying an extra variable around through the whole process
+global Schema
+
 # These are the pages that are created on their own. Other objects that are defined in the
 # schema file will be described locally. Objects that have their own page are referenced
 # via a link instead
@@ -32,7 +38,7 @@ Individual_Pages = [
 # These are types that we use a "built-in types that are defined separately. So whenever
 # we encounter these in a documentation we just want to treat then as given and not dig
 # down into them whenever using them
-Reference_Types = [
+BuiltIn_Types = [
   { "name": "orientation", "def": "#/$defs/orientation" },
   { "name": "mat4",        "def": "#/$defs/mat4" },
   { "name": "vec2",        "def": "#/$defs/vec2" },
@@ -44,62 +50,37 @@ Reference_Types = [
   { "name": "color",       "def": "#/$defs/color" },
 ]
 
-
-def extract_data(schema, location):
+# Finds the provided `location` in the `schema`. The location can be a `/` delimited
+# string where this function will traverse the schema and returns the referenced object.
+# If the value could not be found, an `Exception` is raised
+def find_value(schema, location):
+  # Store the original location for better error messages
   original_location = location
 
   # Remove the prefix indicating the root
   if location.startswith("#/"):
     location = location[2:]
 
-  local_schema = schema
-
-  # Dig down through the tree
+  # Dig down through the tree until no separator is left
   while "/" in location:
-    loc = location.split("/", 1)[0]
-    location = location.split("/", 1)[1]
+    loc, location = location.split("/", 1)
 
-    if loc not in local_schema:
-      raise Exception(f"Could not find '{loc}' in the schema. Full location: {original_location}")
+    if loc not in schema:
+      raise Exception(f"Could not find '{loc}'. Full location: {original_location}")
+    schema = schema[loc]
 
-    local_schema = local_schema[loc]
-
-  if location != "" and location not in local_schema:
-      raise Exception(f"Could not find '{location}' in the schema")
+  if location != "" and location not in schema:
+    raise Exception(f"Could not find '{original_location}' in the schema")
 
   if location == "":
-    item = local_schema
+    return schema
   else:
-    item = local_schema[location]
-
-  if "properties" in item:
-    for k in item["properties"]:
-      # Resolve $defs
-      if "$ref" in item["properties"][k]:
-        ref = item["properties"][k]["$ref"]
-        description = ""
-        if "description" in item["properties"][k]:
-          description = item["properties"][k]["description"]
-        item["properties"][k] = extract_data(schema, ref).copy()
-        item["properties"][k]["description"] = description
-        item["properties"][k]["reference_type"] = ref
-        continue
-
-      if "oneOf" in item["properties"][k]:
-        for i in range(len(item["properties"][k]["oneOf"])):
-          v = item["properties"][k]["oneOf"][i]
-          if "$ref" in v:
-            ref = v["$ref"]
-            description = ""
-            if "description" in v:
-              description = v["description"]
-            item["properties"][k]["oneOf"][i] = extract_data(schema, ref).copy()
-            item["properties"][k]["oneOf"][i]["description"] = description
-            item["properties"][k]["oneOf"][i]["reference_type"] = ref
-
-  return item
+    return schema[location]
 
 
+# This filter revieves a description text and automatically converts some links into
+# Markdown links. These can be to other individual pages or links to external webpages
+# that will automatically get shortened
 def markdownify(value):
   def replace_match(match):
     word = match.group()
@@ -112,91 +93,44 @@ def markdownify(value):
   def replace_url(match):
     return f"[link]({match.group()})"
 
-  if value:
-    t = re.sub(r"\b[A-Z][a-zA-Z0-9]*\b", replace_match, value)
-    t = re.sub(r"\bhttps?://[^\s.,]+(?:\.[^\s.,]+)*(?<!\.)", replace_url, t)
-    return t
-  else:
+  if not value:
     return ""
 
+  t = re.sub(r"\b[A-Z][a-zA-Z0-9]*\b", replace_match, value)
+  t = re.sub(r"\bhttps?://[^\s.,]+(?:\.[^\s.,]+)*(?<!\.)", replace_url, t)
+  return t
 
-def friendly_type(value):
-  def handle_array(p):
-    items = p["items"]
-    if "type" in items:
-      return f"array of {friendly_type(items["type"])}s"
-    if "$ref" in items:
-      t = items["$ref"].split("/")[-1]
-      return f"array of [{t.capitalize()}]({t})s"
 
-  def handle_boolean(p):
-    return "boolean"
-
-  def handle_integer(p):
+# This filter extracts the type from a schema definition. The function is able to resolve
+# a $ref reference to another part of the same schema file and convert different types
+# into a human-readable format.
+# In case references get resolved, the resulting value contains a `reference_value` key
+# that indicates the original reference name
+def extract_type(value):
+  def handle_numerical(p, number_type):
     if "enum" in p:
       return ", ".join([str(x) for x in p["enum"]])
     if "minimum" in p and "maximum" in p:
       if p["minimum"] == p["maximum"]:
-        return f"integer equal to {p["minimum"]}"
+        return f"{number_type} equal to {p["minimum"]}"
       else:
-        return f"integer between {p["minimum"]} and {p["maximum"]}"
-    if "minimum" in p:
-      if p["minimum"] == 0:
-        return f"non-negative integer"
-      elif p["minimum"] == 1:
-        return f"positive integer"
-      else:
-        return f"integer min {p["minimum"]}"
-    if "maximum" in p:
-      return f"integer max {p["maximum"]}"
-
-    return "integer"
-
-  def handle_number(p):
-    if "enum" in p:
-      return ", ".join([str(x) for x in p["enum"]])
-    if "minimum" in p and "maximum" in p:
-      if p["minimum"] == p["maximum"]:
-        return f"number equal to {p["minimum"]}"
-      else:
-        return f"number between {p["minimum"]} and {p["maximum"]}"
+        return f"{number_type} between {p["minimum"]} and {p["maximum"]}"
     if "exclusiveMinimum" in p:
       if p["exclusiveMinimum"] == 0:
-        return "positive number"
+        return "positive {number_type}"
       else:
-        return f"number bigger than {p["exclusiveMinimum"]}"
+        return f"{number_type} bigger than {p["exclusiveMinimum"]}"
     if "minimum" in p:
       if p["minimum"] == 0:
-        return f"non-negative number"
+        return f"non-negative {number_type}"
       elif p["minimum"] == 1:
-        return f"positive number"
+        return f"positive {number_type}"
       else:
-        return f"number min {p["minimum"]}"
+        return f"{number_type} min {p["minimum"]}"
     if "maximum" in p:
-      return f"number max {p["maximum"]}"
+      return f"{number_type} max {p["maximum"]}"
 
-    return "number"
-
-  def handle_object(p):
-    if "reference_type" in p:
-      t = p["reference_type"].split("/")[-1]
-      is_reference_type = any(entry["name"] == t for entry in Reference_Types)
-
-      if is_reference_type:
-        return f"[{t}](/users/configuration/index.md#{t})"
-      else:
-        if any(entry["path"] == p["reference_type"] for entry in Individual_Pages):
-          for page in Individual_Pages:
-            if page["path"] == p["reference_type"]:
-              prefix = page.get("prefix")
-              if prefix:
-                return f"[{t.capitalize()}](/users/configuration/{prefix}/{t})"
-              else:
-                return f"[{t.capitalize()}](/users/configuration/{t})"
-        else:
-          return "object"
-    else:
-      return "object"
+    return f"{number_type}"
 
   def handle_string(p):
     if "enum" in p:
@@ -215,34 +149,74 @@ def friendly_type(value):
 
     return "string"
 
+  def handle_object(p):
+    if "type_reference" in p:
+      t = p["type_reference"].split("/")[-1]
+
+      if any(entry["name"] == t for entry in BuiltIn_Types):
+        # If it is a built-in type, we have manually written some documentation for it and
+        # just need to create a link here
+        return f"[{t}](/users/configuration/index.md#{t})"
+      else:
+        if any(entry["path"] == p["type_reference"] for entry in Individual_Pages):
+          # If it is a base type that has its own page, we can create a link to that page
+          for page in Individual_Pages:
+            if page["path"] == p["type_reference"]:
+              prefix = page.get("prefix")
+              if prefix:
+                return f"[{t.capitalize()}](/users/configuration/{prefix}/{t})"
+              else:
+                return f"[{t.capitalize()}](/users/configuration/{t})"
+        else:
+          # This is a type we have created a $def entry for but only to keep the schema
+          # file more manageble. We don't want to create a separate page for it and
+          # instead the documentation will contain copies of it
+          return "object"
+    else:
+      # This is just an object definition without any referencing going on
+      return "object"
+
+
+  if "$ref" in value:
+    ref = value["$ref"]
+
+    global Schema
+    value = find_value(Schema, ref)
+    value["type_reference"] = ref
+
 
   if "type" in value:
     match value["type"]:
-      case "array":    return handle_array(value)
-      case "boolean":  return handle_boolean(value)
-      case "integer":  return handle_integer(value)
-      case "number":   return handle_number(value)
+      case "array":    return f"array of {extract_type(value["items"])}s"
+      case "boolean":  return "boolean"
+      case "integer":  return handle_numerical(value, "integer")
+      case "number":   return handle_numerical(value, "number")
       case "object":   return handle_object(value)
       case "string":   return handle_string(value)
-      case _:          return value["type"]
+      case _:          assert(False)
   elif "oneOf" in value:
     return "one of the following"
   else:
     return value
 
 
+# This filter determines whether we want to locally drill into the properties of an object
+# while creating the documentation. We only want to do this if the `value` is an object
+# and we don't have already created a documentation for, which is only the case for
+# "built-in" types that we manually documented and types for which we are creating
+# individual pages
 def composite_type(value):
-  if "reference_type" in value:
-    is_reference_type = any(entry["def"] == value["reference_type"] for entry in Reference_Types)
-    is_special_type = value["reference_type"] in [ "#/$defs/projectionquality"]
-    is_paged_type =  any(entry["path"] == value["reference_type"] for entry in Individual_Pages)
-    return not is_reference_type and not is_special_type and not is_paged_type
+  if "type_reference" in value:
+    is_builtin_type = any(entry["def"] == value["type_reference"] for entry in BuiltIn_Types)
+    is_paged_type =  any(entry["path"] == value["type_reference"] for entry in Individual_Pages)
+    return not is_builtin_type and not is_paged_type
   elif "type" in value:
     return value["type"] == "object"
   else:
     return False
 
 
+# This filter does the same operation as #composite_type but for arrays instead.
 def array_composite_type(value):
   if value.get("type") == "array":
     return composite_type(value.get("items"))
@@ -258,10 +232,11 @@ def array_composite_type(value):
 def generate_docs(branch, local_folder = ""):
   environment = Environment(loader=FileSystemLoader("templates"))
   environment.filters["markdownify"] = markdownify
-  environment.filters["friendly_type"] = friendly_type
+  environment.filters["extract_type"] = extract_type
   environment.tests["composite_type"] = composite_type
   environment.tests["array_composite_type"] = array_composite_type
   template = environment.get_template("configuration.html.jinja")
+
 
   # Clone the repository if necessary
   if local_folder == "":
@@ -285,16 +260,21 @@ def generate_docs(branch, local_folder = ""):
     git = repo.git()
     git.checkout(f"origin/{branch}", "--", "sgct.schema.json")
 
+
+  # Load the schema file
   schema_file = f"{local_folder}/sgct.schema.json"
   with open(schema_file, "r") as file:
-    schema = json.load(file)
+    global Schema
+    Schema = json.load(file)
 
+
+  # Create the individual pages
   for page in Individual_Pages:
     title = page["name"]
     schema_path = page["path"]
     prefix = page.get("prefix") or ""
 
-    data = extract_data(schema, schema_path)
+    data = find_value(Schema, schema_path)
 
     # Find examples
     part = schema_path.split("/")[-1]
