@@ -23,7 +23,8 @@ LOCAL_SGCT_FOLDER = "sgct-checkout"
 
 
 
-# Generate the files that dynamically depend on asset files in the main OpenSpace repo
+# Generate the documentation files based on the JSON schema file located in the main SGCT
+# repository. This saves us from duplicating that documentation.
 generate_docs(SGCT_BRANCH, LOCAL_SGCT_FOLDER)
 
 
@@ -34,7 +35,7 @@ needs_sphinx = "4.0"
 
 project = "SGCT"
 author = "SGCT community"
-project_copyright = "2012-2024, SGCT community"
+project_copyright = "2012-2025, SGCT community"
 
 # Update with every new release
 version = release = os.getenv("READTHEDOCS_VERSION", "4.0.0")
