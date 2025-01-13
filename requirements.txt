@@ -17,3 +17,7 @@ sphinxcontrib.mermaid==0.9.2
 
 # Markdown support
 myst-parser==2.0.0
+
+# Generate documentation from JSON schema
+GitPython==3.1.43
+Jinja2==3.1.3
