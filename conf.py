@@ -19,7 +19,7 @@ SGCT_BRANCH = "master"
 # branch provided above, instead use a local copy of the repository.
 # OBS: No other value than the empty string should ever be committed to the master branch
 #      of the docs repository
-LOCAL_SGCT_FOLDER = "sgct-checkout"
+LOCAL_SGCT_FOLDER = ""
 
 
 
