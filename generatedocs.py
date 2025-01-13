@@ -110,33 +110,42 @@ def markdownify(value):
 # In case references get resolved, the resulting value contains a `reference_value` key
 # that indicates the original reference name
 def extract_type(value):
+  def handle_array(p):
+    subtype = extract_type(value["items"])
+    f"array of {subtype}s"
+
   def handle_numerical(p, number_type):
     if "enum" in p:
       return ", ".join([str(x) for x in p["enum"]])
 
     if "minimum" not in p and "exclusiveMinimum" not in p and "maximum" not in p and "exclusiveMaximum":
-      return "number"
+      return number_type
 
     min = p.get("minimum", p.get("exclusiveMinimum"))
     max = p.get("maximum", p.get("exclusiveMaximum", "{math}`\infty`"))
     start = "[" if "minimum" in p else "("
     end = "]" if "maximum" in p else ")"
-    return f"number  {start}{min}, {max}{end}"
+    return f"{number_type}  {start}{min}, {max}{end}"
 
   def handle_string(p):
     if "enum" in p:
       return ", ".join(p["enum"])
     if "const" in p:
-      return f"string = \"{p["const"]}\""
+      const = p["const"]
+      return f"string = \"{const}\""
     if "minLength" in p and "maxLength" in p:
-      return f"string between {p["minLength"]} and {p["maxLength"]} characters"
+      minLength = p["minLength"]
+      maxLength = p["maxLength"]
+      return f"string between {minLength} and {maxLength} characters"
     if "minLength" in p:
       if p["minLength"] == 1:
         return f"non-empty string"
       else:
-        return f"string min length {p["minLength"]}"
+        minLength = p["minLength"]
+        return f"string min length {minLength}"
     if "maxLength" in p:
-      return f"string max length {p["maxLength"]}"
+      maxLength = p["maxLength"]
+      return f"string max length {maxLength}"
 
     return "string"
 
@@ -175,7 +184,7 @@ def extract_type(value):
 
   if "type" in value:
     match value["type"]:
-      case "array":    return f"array of {extract_type(value["items"])}s"
+      case "array":    return handle_array(value)
       case "boolean":  return "boolean"
       case "integer":  return handle_numerical(value, "integer")
       case "number":   return handle_numerical(value, "number")
