@@ -113,7 +113,7 @@ def markdownify(value):
 def extract_type(value):
   def handle_array(p):
     subtype = extract_type(value["items"])
-    f"array of {subtype}s"
+    return f"array of {subtype}s"
 
   def handle_numerical(p, number_type):
     if "enum" in p:
