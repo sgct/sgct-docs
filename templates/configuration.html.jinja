@@ -17,7 +17,7 @@
     {% endif %}
 
     {% if value is composite_type %}
-      {{ print_object(value) | indent(4, True) }}
+      {{ print_object(value | resolve_reference) | indent(4, True) }}
     {% endif %}
 
     {% if value is array_composite_type %}

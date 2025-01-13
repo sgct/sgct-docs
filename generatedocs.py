@@ -53,13 +53,16 @@ BuiltIn_Types = [
 # Finds the provided `location` in the `schema`. The location can be a `/` delimited
 # string where this function will traverse the schema and returns the referenced object.
 # If the value could not be found, an `Exception` is raised
-def find_value(schema, location):
+def find_value(location):
+  global Schema
   # Store the original location for better error messages
   original_location = location
 
   # Remove the prefix indicating the root
   if location.startswith("#/"):
     location = location[2:]
+
+  schema = Schema
 
   # Dig down through the tree until no separator is left
   while "/" in location:
@@ -179,9 +182,7 @@ def extract_type(value):
 
   if "$ref" in value:
     ref = value["$ref"]
-
-    global Schema
-    value = find_value(Schema, ref)
+    value = find_value(ref)
     value["type_reference"] = ref
 
 
@@ -199,6 +200,12 @@ def extract_type(value):
   else:
     return value
 
+def resolve_reference(value):
+  if "$ref" in value and not any(entry["path"] == value["$ref"] for entry in Individual_Pages):
+    return find_value(value["$ref"])
+  else:
+    return value
+
 
 # This filter determines whether we want to locally drill into the properties of an object
 # while creating the documentation. We only want to do this if the `value` is an object
@@ -206,6 +213,12 @@ def extract_type(value):
 # "built-in" types that we manually documented and types for which we are creating
 # individual pages
 def composite_type(value):
+  if "$ref" in value and not any(entry["path"] == value["$ref"] for entry in Individual_Pages):
+    value = find_value(value["$ref"])
+
+  if "type" in value and value["type"] != "object":
+    return False
+
   if "type_reference" in value:
     is_builtin_type = any(entry["def"] == value["type_reference"] for entry in BuiltIn_Types)
     is_paged_type =  any(entry["path"] == value["type_reference"] for entry in Individual_Pages)
@@ -233,6 +246,7 @@ def generate_docs(branch, local_folder = ""):
   environment = Environment(loader=FileSystemLoader("templates"))
   environment.filters["markdownify"] = markdownify
   environment.filters["extract_type"] = extract_type
+  environment.filters["resolve_reference"] = resolve_reference
   environment.tests["composite_type"] = composite_type
   environment.tests["array_composite_type"] = array_composite_type
   template = environment.get_template("configuration.html.jinja")
@@ -274,17 +288,16 @@ def generate_docs(branch, local_folder = ""):
     schema_path = page["path"]
     prefix = page.get("prefix") or ""
 
-    data = find_value(Schema, schema_path)
+    # if title != "Cubemap Projection":
+      # continue
 
-    # Find examples
-    part = schema_path.split("/")[-1]
-    examples = None
-    if os.path.exists(f"assets/configs/examples/{part}"):
-      examples = glob.glob(f"assets/configs/examples/{part}/*.json")
+    component = schema_path.split("/")[-1] or "cluster"
 
+    data = find_value(schema_path)
+    examples = glob.glob(f"assets/configs/examples/{component}/*.json")
+    images = glob.glob(f"assets/configs/images/{component}/*.png")
     doc = template.render(data=data, title=title, examples=examples)
-    path = f"users/configuration/{prefix}/{title.lower().replace(" ", "")}.md"
-    with open(path, "w") as f:
+    with open(f"users/configuration/{prefix}/{component}.md", "w") as f:
       f.write(doc)
 
 
