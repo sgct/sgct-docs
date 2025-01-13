@@ -4,6 +4,7 @@ import json
 import re
 import os
 import glob
+import shutil
 
 # This variable contains the Schema that we are currently working on. It is a global
 # variable as (a) there is only one schema we are working with and (b) the Jinja filters
@@ -269,10 +270,10 @@ def generate_docs(branch, local_folder = ""):
     def print_progress(op_code, cur_count, max_count=None, message=""):
       print(message)
 
-    local_folder = "sgct-checkout"
+    local_folder = "sgct_checkout"
 
     print("Cloning repository")
-    repo = Repo.init(local_folder)
+    repo = Repo.init(path=local_folder, mkdir=True)
 
     # Create a new remote if there isn't one already created
     origin = repo.remotes[0] if len(repo.remotes) > 0 else None
@@ -317,4 +318,4 @@ def generate_docs(branch, local_folder = ""):
 
 # For debugging purposes, make this file executable directly with default values
 # if __name__ == "__main__":
-  # generate_docs("master", "sgct-checkout")
+  # generate_docs("master", "")
