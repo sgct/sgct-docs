@@ -85,6 +85,9 @@ def find_value(location):
 # Markdown links. These can be to other individual pages or links to external webpages
 # that will automatically get shortened
 def markdownify(value):
+  if not value:
+    return ""
+
   def replace_match(match):
     word = match.group()
     for page in Individual_Pages:
@@ -92,15 +95,12 @@ def markdownify(value):
         prefix = page.get("prefix") or ""
         return f"[{word}](/users/configuration/{prefix}/{word.lower()})"
     return word
+  t = re.sub(r"\b[A-Z][a-zA-Z0-9]*\b", replace_match, value)
 
   def replace_url(match):
     return f"[link]({match.group()})"
-
-  if not value:
-    return ""
-
-  t = re.sub(r"\b[A-Z][a-zA-Z0-9]*\b", replace_match, value)
   t = re.sub(r"\bhttps?://[^\s.,]+(?:\.[^\s.,]+)*(?<!\.)", replace_url, t)
+
   return t
 
 
@@ -113,27 +113,15 @@ def extract_type(value):
   def handle_numerical(p, number_type):
     if "enum" in p:
       return ", ".join([str(x) for x in p["enum"]])
-    if "minimum" in p and "maximum" in p:
-      if p["minimum"] == p["maximum"]:
-        return f"{number_type} equal to {p["minimum"]}"
-      else:
-        return f"{number_type} between {p["minimum"]} and {p["maximum"]}"
-    if "exclusiveMinimum" in p:
-      if p["exclusiveMinimum"] == 0:
-        return "positive {number_type}"
-      else:
-        return f"{number_type} bigger than {p["exclusiveMinimum"]}"
-    if "minimum" in p:
-      if p["minimum"] == 0:
-        return f"non-negative {number_type}"
-      elif p["minimum"] == 1:
-        return f"positive {number_type}"
-      else:
-        return f"{number_type} min {p["minimum"]}"
-    if "maximum" in p:
-      return f"{number_type} max {p["maximum"]}"
 
-    return f"{number_type}"
+    if "minimum" not in p and "exclusiveMinimum" not in p and "maximum" not in p and "exclusiveMaximum":
+      return "number"
+
+    min = p.get("minimum", p.get("exclusiveMinimum"))
+    max = p.get("maximum", p.get("exclusiveMaximum", "{math}`\infty`"))
+    start = "[" if "minimum" in p else "("
+    end = "]" if "maximum" in p else ")"
+    return f"number  {start}{min}, {max}{end}"
 
   def handle_string(p):
     if "enum" in p:
@@ -141,14 +129,14 @@ def extract_type(value):
     if "const" in p:
       return f"string = \"{p["const"]}\""
     if "minLength" in p and "maxLength" in p:
-      return f"string between {p["minLength"]} and {p["maxLength"]}"
+      return f"string between {p["minLength"]} and {p["maxLength"]} characters"
     if "minLength" in p:
       if p["minLength"] == 1:
         return f"non-empty string"
       else:
-        return f"string min {p["minLength"]}"
+        return f"string min length {p["minLength"]}"
     if "maxLength" in p:
-      return f"string max {p["maxLength"]}"
+      return f"string max length {p["maxLength"]}"
 
     return "string"
 
@@ -185,7 +173,6 @@ def extract_type(value):
     value = find_value(ref)
     value["type_reference"] = ref
 
-
   if "type" in value:
     match value["type"]:
       case "array":    return f"array of {extract_type(value["items"])}s"
@@ -200,11 +187,27 @@ def extract_type(value):
   else:
     return value
 
+
+# This filter takes an object and if it is a reference to another place in the
+# schema document, it will resolve that link and infill the value
 def resolve_reference(value):
   if "$ref" in value and not any(entry["path"] == value["$ref"] for entry in Individual_Pages):
     return find_value(value["$ref"])
   else:
     return value
+
+
+# This filter takes the path to an example JSON file and returns the corresponding
+# image file. If no such image file exists, and Exception is raised
+def image_from_example(value):
+  assert os.path.exists(value), f"Configuration file {value} did not exist"
+
+  pre, ext = os.path.splitext(value)
+  image = f"{pre}.png"
+
+  assert ext == ".json", f"image_from_example called on non-configuration path {value}"
+  assert os.path.exists(image), f"Image {image} for configuration {value} did not exist"
+  return image
 
 
 # This filter determines whether we want to locally drill into the properties of an object
@@ -237,7 +240,6 @@ def array_composite_type(value):
     return False
 
 
-
 # Generate the documentation Markdown files. If `local_folder` is not specified, we check
 # out the SGCT repository to get access to the `sgct.schema.json`` which contains all of
 # the primary documentation. This schema file will then be read and converted into the
@@ -247,6 +249,7 @@ def generate_docs(branch, local_folder = ""):
   environment.filters["markdownify"] = markdownify
   environment.filters["extract_type"] = extract_type
   environment.filters["resolve_reference"] = resolve_reference
+  environment.filters["image_from_example"] = image_from_example
   environment.tests["composite_type"] = composite_type
   environment.tests["array_composite_type"] = array_composite_type
   template = environment.get_template("configuration.html.jinja")
@@ -288,6 +291,7 @@ def generate_docs(branch, local_folder = ""):
     schema_path = page["path"]
     prefix = page.get("prefix") or ""
 
+    # For debugging purposes if only a single page should be generated
     # if title != "Cubemap Projection":
       # continue
 
@@ -295,7 +299,7 @@ def generate_docs(branch, local_folder = ""):
 
     data = find_value(schema_path)
     examples = glob.glob(f"assets/configs/examples/{component}/*.json")
-    images = glob.glob(f"assets/configs/images/{component}/*.png")
+    examples = [example.replace(os.sep, "/") for example in examples]
     doc = template.render(data=data, title=title, examples=examples)
     with open(f"users/configuration/{prefix}/{component}.md", "w") as f:
       f.write(doc)
@@ -303,5 +307,5 @@ def generate_docs(branch, local_folder = ""):
 
 
 # For debugging purposes, make this file executable directly with default values
-if __name__ == "__main__":
-  generate_docs("master", "sgct-checkout")
+# if __name__ == "__main__":
+  # generate_docs("master", "sgct-checkout")

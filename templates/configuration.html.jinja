@@ -1,6 +1,7 @@
 {# Print a single property entry. If necessary, recurse if it is a composite type or an array of composite types #}
 {% macro print_entry(prop, value, required) %}
-  - `{{ prop }}` **[{{ value | extract_type }}]** {% if prop not in required %} _optional_ {% endif %}
+  - `{{ prop }}` {% if prop not in required %} _(optional)_ {% endif %}<br>
+    **{{ value | extract_type }}**
 
     {{ value.description | markdownify }}
 
@@ -57,5 +58,6 @@
 :language: json
 :caption: Example file ([download](/{{ example }}))
 ```
+![image](/{{ example | image_from_example }})
 {% endfor %}
 {% endif %}
