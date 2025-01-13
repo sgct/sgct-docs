@@ -1,0 +1,63 @@
+{# Print a single property entry. If necessary, recurse if it is a composite type or an array of composite types #}
+{% macro print_entry(prop, value, required) %}
+  - `{{ prop }}` {% if prop not in required %} _(optional)_ {% endif %}<br>
+    **{{ value | extract_type }}**
+
+    {{ value.description | markdownify }}
+
+    {% if value.oneOf %}
+      {%- for key in value.oneOf -%}
+        {%- if key is composite_type -%}
+          Option {{loop.index}}
+
+          {{ print_object(key) | indent(4, True) }}
+        {% else -%}
+          1. {{ key | extract_type }}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    {% if value is composite_type %}
+      {{ print_object(value | resolve_reference) | indent(4, True) }}
+    {% endif %}
+
+    {% if value is array_composite_type %}
+      {{ print_object(value["items"]) | indent(4, True) }}
+    {% endif %}
+{% endmacro %}
+
+
+{% macro print_object(obj) %}
+{# We don't sort the parameters here to keep them in the same order as they are in the schema file. That provides the documentation writer with the ability to sort them based on importance rather than alphabetically #}
+
+{# First print all of the required parameters #}
+{% for prop, value in obj.properties.items() if prop in obj.required %}
+  {{ print_entry(prop, value, obj.required) }}
+{% endfor %}
+
+{# Then print all of the optional parameters #}
+{% for prop, value in obj.properties.items() if prop not in obj.required %}
+  {{ print_entry(prop, value, obj.required) }}
+{% endfor %}
+{% endmacro %}
+
+
+
+{# MAIN #}
+
+# {{ title }}
+
+{{ data.description | markdownify }}
+
+{{ print_object(data) }}
+
+{% if examples %}
+## Example
+{% for example in examples %}
+```{literalinclude} /{{ example }}
+:language: json
+:caption: Example file ([download](/{{ example }}))
+```
+![image](/{{ example | image_from_example }})
+{% endfor %}
+{% endif %}

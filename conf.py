@@ -1,4 +1,31 @@
 import os
+import sys
+
+# The way Sphinx handles the path during the evaluation of the conf.py is a bit strange
+# so we have to add the current folder or else the `import` statement will fail
+sys.path.append(os.path.abspath("."))
+from generatedocs import generate_docs
+
+##########################################################################################
+#                                     CUSTOMIZATION                                      #
+##########################################################################################
+# This is the branch on the SGCT repository from which the documentation will be built.
+# Change this to a different branch to try a local branch before committing.
+# OBS: No other value than `master` should ever be committed to the master branch of the
+#      docs repository
+SGCT_BRANCH = "master"
+
+# If this value is specified, instead of cloning SGCT from the main repository using the
+# branch provided above, instead use a local copy of the repository.
+# OBS: No other value than the empty string should ever be committed to the master branch
+#      of the docs repository
+LOCAL_SGCT_FOLDER = "sgct-checkout"
+
+
+
+# Generate the documentation files based on the JSON schema file located in the main SGCT
+# repository. This saves us from duplicating that documentation.
+generate_docs(SGCT_BRANCH, LOCAL_SGCT_FOLDER)
 
 
 ###
@@ -8,7 +35,7 @@ needs_sphinx = "4.0"
 
 project = "SGCT"
 author = "SGCT community"
-project_copyright = "2012-2023, SGCT community"
+project_copyright = "2012-2025, SGCT community"
 
 # Update with every new release
 version = release = os.getenv("READTHEDOCS_VERSION", "4.0.0")
@@ -34,7 +61,8 @@ keep_warnings = True
 ###
 source_encoding = "utf-8-sig"
 exclude_patterns = [
-  "README.md"
+  "README.md",
+  ".venv"
 ]
 root_doc = "index"
 primary_domain = "cpp"
@@ -82,7 +110,7 @@ html_theme_options = {
   "light_logo": "logo.png",
   "dark_logo": "logo-inverted.png"
 }
-html_title = f'SGCT documentation ({version})'
+html_title = "SGCT documentation"
 html_short_title = "SGCT"
 
 html_favicon = "assets/images/icon.png"
