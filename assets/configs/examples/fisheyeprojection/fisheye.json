@@ -4,11 +4,9 @@
   "nodes": [
     {
       "address": "localhost",
-      "port": 20401,
+      "port": 20400,
       "windows": [
         {
-          "fullscreen": false,
-          "stereo": "none",
           "size": { "x": 512, "y": 512 },
           "viewports": [
             {

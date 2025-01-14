@@ -157,7 +157,7 @@ def extract_type(value):
       if any(entry["name"] == t for entry in BuiltIn_Types):
         # If it is a built-in type, we have manually written some documentation for it and
         # just need to create a link here
-        return f"[{t}](/users/configuration/index.md#{t})"
+        return f"[{t}](/users/configuration/types.md#{t})"
       else:
         if any(entry["path"] == p["type_reference"] for entry in Individual_Pages):
           # If it is a base type that has its own page, we can create a link to that page

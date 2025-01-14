@@ -76,6 +76,7 @@ SGCT uses and acknowledges the following external third-party libraries:
 
 users/configuration/index
 users/commandline-arguments
+users/examples
 :::
 
 
